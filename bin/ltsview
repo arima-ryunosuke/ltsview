@@ -1,0 +1,18 @@
+#!/usr/bin/env php
+<?php
+
+if (version_compare(PHP_VERSION, '7.1.0') < 0) {
+    throw new \RuntimeException('php version is under 7.1.0');
+}
+
+$files = array_filter([__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php'], 'file_exists');
+if (!$files) {
+    throw new \RuntimeException('vendor/autoload.php could not be found. Did you run `php composer.phar install`?');
+}
+require_once reset($files);
+
+$command = new \ryunosuke\ltsv\Console\Command\LtsviewCommand();
+$application = new \Symfony\Component\Console\Application('ltsv', $command::VERSION);
+$application->add($command);
+$application->setDefaultCommand($command::NAME, true);
+$application->run();
