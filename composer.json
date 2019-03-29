@@ -1,0 +1,57 @@
+{
+  "config": {
+    "platform": {
+      "php": "7.1"
+    }
+  },
+  "name": "ryunosuke/ltsview",
+  "type": "command",
+  "description": "pretty view ltsv format",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "ryunosuke",
+      "email": "ryunosuke.arima@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.1",
+    "ryunosuke/functions": "1.2.*",
+    "symfony/console": "*",
+    "symfony/yaml": "*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "7.*"
+  },
+  "autoload": {
+    "psr-4": {
+      "ryunosuke\\ltsv\\": "src"
+    },
+    "files": [
+      "vendor/ryunosuke/functions/include/global.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "ryunosuke\\test\\": "tests/Test"
+    }
+  },
+  "bin": [
+    "bin/ltsview"
+  ],
+  "scripts": {
+    "build": [
+      "@composer install",
+      "@composer test",
+      "@composer box"
+    ],
+    "test": [
+      "vendor/bin/phpunit --configuration=tests/phpunit.xml"
+    ],
+    "box": [
+      "@composer dump-autoload --no-dev",
+      "bin/box.phar build -c box.json",
+      "@composer dump-autoload"
+    ]
+  }
+}

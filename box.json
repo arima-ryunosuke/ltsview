@@ -1,0 +1,33 @@
+{
+  "compression": "GZ",
+  "chmod": "0755",
+  "files": [
+    "vendor/autoload.php",
+    "vendor/ryunosuke/functions/include/global.php"
+  ],
+  "finder": [
+    {
+      "name": "*.php",
+      "exclude": [
+        "Examples",
+        "test",
+        "tests",
+        "Test",
+        "Tests",
+        "unitTests"
+      ],
+      "in": [
+        "src",
+        "vendor/composer",
+        "vendor/psr",
+        "vendor/symfony/console",
+        "vendor/symfony/polyfill-ctype",
+        "vendor/symfony/polyfill-mbstring",
+        "vendor/symfony/yaml"
+      ]
+    }
+  ],
+  "main": "bin/ltsview",
+  "output": "ltsview.phar",
+  "stub": true
+}
