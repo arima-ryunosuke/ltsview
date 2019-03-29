@@ -1,0 +1,22 @@
+<?php
+
+namespace ryunosuke\ltsv\Type;
+
+class Tsv extends AbstractType
+{
+    public function head($column)
+    {
+        if ($this->comment_mode) {
+            return implode("\t", $column) . "\n";
+        }
+    }
+
+    public function meta($file, $n) { }
+
+    public function body($fields)
+    {
+        return implode("\t", $fields) . "\n";
+    }
+
+    public function foot() { }
+}
