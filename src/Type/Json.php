@@ -33,9 +33,12 @@ class Json extends AbstractType
             $fields = ['//' => $this->meta] + $fields;
         }
 
-        $json = json_encode([(object) $fields],
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK | JSON_PRESERVE_ZERO_FRACTION
-        );
+        $jopt = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK | JSON_PRESERVE_ZERO_FRACTION;
+        if ($this->compact_mode) {
+            $json = json_encode((object) $fields, $jopt);
+            return $prefix . '    ' . $json;
+        }
+        $json = json_encode([(object) $fields], JSON_PRETTY_PRINT | $jopt);
         return $prefix . trim($json, "[\r\n]");
     }
 

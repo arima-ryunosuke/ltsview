@@ -16,23 +16,23 @@ abstract class AbstractTestCase extends \ryunosuke\test\AbstractTestCase
     /** @var callable */
     protected $decoder;
 
-    protected function getType($meta)
+    protected function getType($meta, $compact)
     {
         $name = preg_replace('#Test$#', '', array_slice(explode("\\", get_class($this)), -1)[0]);
-        return AbstractType::instance(strtolower($name), $meta);
+        return AbstractType::instance(strtolower($name), $meta, $compact);
     }
 
     protected function setUp()
     {
         parent::setUp();
 
-        $this->type = $this->getType($this->meta);
+        $this->type = $this->getType($this->meta, false);
     }
 
     function test_instance()
     {
-        $this->assertInstanceOf(Yaml::class, AbstractType::instance('yml', false));
-        $this->assertInstanceOf(Markdown::class, AbstractType::instance('md', false));
+        $this->assertInstanceOf(Yaml::class, AbstractType::instance('yml', false, false));
+        $this->assertInstanceOf(Markdown::class, AbstractType::instance('md', false, false));
         $this->assertException('not supported', [AbstractType::class, 'instance'], 'hoge');
     }
 

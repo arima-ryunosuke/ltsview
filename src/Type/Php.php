@@ -18,11 +18,20 @@ class Php extends AbstractType
 
     public function body($fields)
     {
-        $result = "    [\n";
-        foreach ($fields as $label => $value) {
-            $result .= "        " . var_export($label, true) . " => " . var_export($value, true) . ",\n";
+        if ($this->compact_mode) {
+            $result = "    [";
+            foreach ($fields as $label => $value) {
+                $result .= var_export($label, true) . "=>" . var_export($value, true) . ",";
+            }
+            return $result . "],\n";
         }
-        return $result . "    ],\n";
+        else {
+            $result = "    [\n";
+            foreach ($fields as $label => $value) {
+                $result .= "        " . var_export($label, true) . " => " . var_export($value, true) . ",\n";
+            }
+            return $result . "    ],\n";
+        }
     }
 
     public function foot()

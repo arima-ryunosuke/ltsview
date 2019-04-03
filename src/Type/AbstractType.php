@@ -5,6 +5,7 @@ namespace ryunosuke\ltsv\Type;
 abstract class AbstractType
 {
     protected $comment_mode;
+    protected $compact_mode;
 
     public static function instance($type, ...$args)
     {
@@ -28,9 +29,10 @@ abstract class AbstractType
         }
     }
 
-    public function __construct($comment_mode)
+    public function __construct($comment_mode, $compact_mode)
     {
         $this->comment_mode = $comment_mode;
+        $this->compact_mode = $compact_mode;
     }
 
     abstract public function head($column);

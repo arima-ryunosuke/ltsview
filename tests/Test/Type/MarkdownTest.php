@@ -29,13 +29,13 @@ class MarkdownTest extends AbstractTestCase
 
     function test_meta()
     {
-        $type = $this->getType(false);
+        $type = $this->getType(false, false);
         $fields = ['a' => 'A', 'b' => 'B', 'c' => 'C'];
         $buffer = '';
         $buffer .= $type->head(array_keys($fields));
         $buffer .= $type->meta('dummy', 1);
         $buffer .= $type->body($fields);
         $buffer .= $type->foot();
-        $this->assertEquals("|  A  |  B  |  C  |\n", $buffer);
+        $this->assertEquals("|  A  |  B  |  C  |\n", $buffer, "Actual:\n$buffer");
     }
 }

@@ -101,8 +101,9 @@ EOT
         $format = $this->input->getOption('format');
         $below = (int) $this->input->getOption('below');
         $comment = !$this->input->getOption('nocomment');
+        $compact = !!$this->input->getOption('compact');
 
-        $type = AbstractType::instance($format, $comment);
+        $type = AbstractType::instance($format, $comment, $compact);
 
         $index = $count = 0;
         $lastindex = -1;

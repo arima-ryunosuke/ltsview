@@ -17,13 +17,22 @@ class JsonTest extends AbstractTestCase
 
     function test_meta()
     {
-        $type = $this->getType(true);
+        $type = $this->getType(true, false);
         $fields = ['a' => 'A', 'b' => 'B', 'c' => 'C'];
         $buffer = '';
         $buffer .= $type->head(array_keys($fields));
         $buffer .= $type->meta('dummy', 1);
         $buffer .= $type->body($fields);
         $buffer .= $type->foot();
-        $this->assertEquals([['//' => 'dummy:1'] + $fields], ($this->decoder)($buffer));
+        $this->assertEquals([['//' => 'dummy:1'] + $fields], ($this->decoder)($buffer), "Actual:\n$buffer");
+    }
+
+    function test_compact()
+    {
+        $type = $this->getType(false, true);
+        $fields = ['a' => 'A', 'b' => 'B', 'c' => 'C'];
+        $buffer = $type->body($fields);
+        $this->assertEquals($fields, ($this->decoder)($buffer), "Actual:\n$buffer");
+        $this->assertEquals('    {"a":"A","b":"B","c":"C"}', $buffer, "Actual:\n$buffer");
     }
 }
