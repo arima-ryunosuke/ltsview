@@ -108,27 +108,28 @@ EOT
         $lastindex = -1;
 
         $this->output->write($type->head($this->column()));
-        foreach ($this->from() as $fname => $from) {
-            foreach ($from as $n => $fields) {
-                $columns = $this->select($fields);
+        foreach ($this->from() as $it) {
+            list($seq, $fname, $n, $fields) = $it;
 
-                if ($this->where($columns + $fields)) {
-                    $lastindex = $n;
-                }
-                elseif ($below === 0 || $lastindex === -1 || ($lastindex + $below < $n)) {
-                    continue;
-                }
+            $columns = $this->select($fields);
+            $allcols = $columns + $fields;
 
-                if (!$this->offset(++$index)) {
-                    continue;
-                }
+            if ($this->where($allcols)) {
+                $lastindex = $seq;
+            }
+            elseif ($below === 0 || $lastindex === -1 || ($lastindex + $below < $seq)) {
+                continue;
+            }
 
-                $this->output->write($type->meta($fname, $n + 1));
-                $this->output->write($type->body($columns));
+            if (!$this->offset(++$index)) {
+                continue;
+            }
 
-                if (!$this->limit(++$count)) {
-                    break 2;
-                }
+            $this->output->write($type->meta($fname, $n + 1));
+            $this->output->write($type->body($columns));
+
+            if (!$this->limit(++$count)) {
+                break;
             }
         }
         $this->output->write($type->foot());
@@ -137,15 +138,16 @@ EOT
     private function from()
     {
         $froms = (array) ($this->input->getArgument('from') ?: '-');
+        $seq = 0;
         foreach ($froms as $from) {
-            yield $from => (function ($from) {
-                $handle = $from === '-' ? self::$STDIN : fopen($from, 'r');
-                while (($line = fgets($handle)) !== false) {
-                    if (strlen(trim($line))) {
-                        yield str_array(explode("\t", $line), ':', true);
-                    }
+            $handle = $from === '-' ? self::$STDIN : fopen($from, 'r');
+            $n = 0;
+            while (($line = fgets($handle)) !== false) {
+                $n++;
+                if (strlen(trim($line))) {
+                    yield [$seq++, $from, $n, str_array(explode("\t", $line), ':', true)];
                 }
-            })($from);
+            }
         }
     }
 
