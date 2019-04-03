@@ -43,11 +43,16 @@ class LtsviewCommand extends Command
                 - e.g. filter greater than: --where '\$colA > 100'
                 - e.g. filter match string: --where '\$colA == \"word\"'
                 - e.g. filter php function: --where 'ctype_digit(\$colA)'"),
+            new InputOption('order-by', 't', InputOption::VALUE_REQUIRED, "Specify order column (+/- prefix means ASC/DESC). Can use all php functions and use virtual column.
+                - e.g. order DESC column: --order-by '-colA'
+                - e.g. order colti column: --order-by '-colA, colB'
+                - e.g. order php expression: --order-by '`\$colA + \$colB`'"),
             new InputOption('offset', 'o', InputOption::VALUE_REQUIRED, "Specify skip count."),
             new InputOption('limit', 'l', InputOption::VALUE_REQUIRED, "Specify take count."),
             new InputOption('require', 'r', InputOption::VALUE_REQUIRED, "Specify require file.php."),
             new InputOption('format', 'f', InputOption::VALUE_REQUIRED, "Specify output format[yaml|json|ltsv|tsv|md|php].", 'yaml'),
-            new InputOption('below', 'b', InputOption::VALUE_REQUIRED, "Specify count below the matched where."),
+            new InputOption('below', 'b', InputOption::VALUE_REQUIRED, "Specify count below the matched where (keeping original order)."),
+            new InputOption('compact', null, InputOption::VALUE_NONE, "Switch compact output."),
             new InputOption('nocomment', 'C', InputOption::VALUE_NONE, "Switch comment output."),
             new InputOption('noerror', 'E', InputOption::VALUE_NONE, "Switch error output."),
         ]);
@@ -105,34 +110,91 @@ EOT
 
         $type = AbstractType::instance($format, $comment, $compact);
 
-        $index = $count = 0;
-        $lastindex = -1;
 
         $this->output->write($type->head($this->column()));
-        foreach ($this->from() as $it) {
-            list($seq, $fname, $n, $fields) = $it;
 
-            $columns = $this->select($fields);
-            $allcols = $columns + $fields;
+        // orderBy requires buffering
+        if ($this->input->getOption('order-by')) {
+            $buffer = [];
+            $lastindex = -1;
+            foreach ($this->from() as $it) {
+                list($seq, $fname, $n, $fields) = $it;
 
-            if ($this->where($allcols)) {
-                $lastindex = $seq;
+                $columns = $this->select($fields);
+                $allcols = $columns + $fields;
+
+                $matched = $this->where($allcols);
+                if ($matched) {
+                    $lastindex = $seq;
+                }
+                elseif ($below === 0 || $lastindex === -1 || ($lastindex + $below < $seq)) {
+                    continue;
+                }
+
+                if ($matched) {
+                    $buffer[$seq] = [$seq, $fname, $n, $columns, $allcols, []];
+                }
+                else {
+                    $buffer[$lastindex][5][] = [$seq, $fname, $n, $columns, $allcols, null];
+                }
             }
-            elseif ($below === 0 || $lastindex === -1 || ($lastindex + $below < $seq)) {
-                continue;
-            }
 
-            if (!$this->offset(++$index)) {
-                continue;
-            }
+            $this->orderBy($buffer);
 
-            $this->output->write($type->meta($fname, $n + 1));
-            $this->output->write($type->body($columns));
+            $index = $count = 0;
+            foreach ($buffer as $it) {
+                list(, $fname, $n, $columns, , $children) = $it;
 
-            if (!$this->limit(++$count)) {
-                break;
+                if (!$this->offset(++$index)) {
+                    continue;
+                }
+
+                $this->output->write($type->meta($fname, $n + 1));
+                $this->output->write($type->body($columns));
+
+                foreach ($children as $child) {
+                    if (!$this->limit(++$count)) {
+                        break 2;
+                    }
+                    list(, $fname, $n, $columns) = $child;
+                    $this->output->write($type->meta($fname, $n + 1));
+                    $this->output->write($type->body($columns));
+                }
+
+                if (!$this->limit(++$count)) {
+                    break;
+                }
             }
         }
+        else {
+            $lastindex = -1;
+            $index = $count = 0;
+            foreach ($this->from() as $it) {
+                list($seq, $fname, $n, $fields) = $it;
+
+                $columns = $this->select($fields);
+                $allcols = $columns + $fields;
+
+                if ($this->where($allcols)) {
+                    $lastindex = $seq;
+                }
+                elseif ($below === 0 || $lastindex === -1 || ($lastindex + $below < $seq)) {
+                    continue;
+                }
+
+                if (!$this->offset(++$index)) {
+                    continue;
+                }
+
+                $this->output->write($type->meta($fname, $n + 1));
+                $this->output->write($type->body($columns));
+
+                if (!$this->limit(++$count)) {
+                    break;
+                }
+            }
+        }
+
         $this->output->write($type->foot());
     }
 
@@ -247,6 +309,50 @@ EOT
         }
 
         return $this->evaluate($this->cache['where'], $fields);
+    }
+
+    private function orderBy(&$buffer)
+    {
+        $this->cache['order-by'] = $this->cache['order-by'] ?? (function () {
+                $orderBy = [];
+                foreach (quoteexplode(',', $this->input->getOption('order-by'), '`') as $col) {
+                    $prefix = $col[0];
+                    $col = ltrim($col, '+-');
+                    $ord = ['+' => true, '-' => false][$prefix] ?? true;
+                    if ($col[0] === '`') {
+                        $orderBy[] = [
+                            trim($col, '`'),
+                            $ord,
+                            function ($col, $fields) {
+                                return $this->evaluate($col, $fields);
+                            }
+                        ];
+                    }
+                    else {
+                        $orderBy[] = [$col, $ord, null];
+                    }
+                }
+                return $orderBy;
+            })();
+
+        usort($buffer, function ($a, $b) {
+            foreach ($this->cache['order-by'] as $orderBy) {
+                list($key, $ord, $expr) = $orderBy;
+                if ($expr) {
+                    $delta = $expr($key, $a[3]) <=> $expr($key, $b[3]);
+                }
+                else {
+                    $delta = $a[3][$key] <=> $b[3][$key];
+                }
+                if ($delta !== 0) {
+                    if (!$ord) {
+                        $delta = -$delta;
+                    }
+                    return $delta;
+                }
+            }
+            return 0;
+        });
     }
 
     private function offset($index)
