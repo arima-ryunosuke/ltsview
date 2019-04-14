@@ -52,6 +52,7 @@ class LtsviewCommand extends Command
             new InputOption('require', 'r', InputOption::VALUE_REQUIRED, "Specify require file.php."),
             new InputOption('format', 'f', InputOption::VALUE_REQUIRED, "Specify output format[yaml|json|ltsv|tsv|md|php].", 'yaml'),
             new InputOption('below', 'b', InputOption::VALUE_REQUIRED, "Specify count below the matched where (keeping original order)."),
+            new InputOption('below-where', 'W', InputOption::VALUE_REQUIRED, "Specify below filter statement."),
             new InputOption('compact', null, InputOption::VALUE_NONE, "Switch compact output."),
             new InputOption('nocomment', 'C', InputOption::VALUE_NONE, "Switch comment output."),
             new InputOption('noerror', 'E', InputOption::VALUE_NONE, "Switch error output."),
@@ -124,10 +125,14 @@ EOT
                 $allcols = $columns + $fields;
 
                 $matched = $this->where($allcols);
+                $belowed = !($below === 0 || $lastindex === -1 || ($lastindex + $below < $seq));
                 if ($matched) {
                     $lastindex = $seq;
                 }
-                elseif ($below === 0 || $lastindex === -1 || ($lastindex + $below < $seq)) {
+                elseif (!$belowed) {
+                    continue;
+                }
+                elseif ($belowed && !$this->whereBelow($allcols)) {
                     continue;
                 }
 
@@ -175,10 +180,15 @@ EOT
                 $columns = $this->select($fields);
                 $allcols = $columns + $fields;
 
-                if ($this->where($allcols)) {
+                $matched = $this->where($allcols);
+                $belowed = !($below === 0 || $lastindex === -1 || ($lastindex + $below < $seq));
+                if ($matched) {
                     $lastindex = $seq;
                 }
-                elseif ($below === 0 || $lastindex === -1 || ($lastindex + $below < $seq)) {
+                elseif (!$belowed) {
+                    continue;
+                }
+                elseif ($belowed && !$this->whereBelow($allcols)) {
                     continue;
                 }
 
@@ -309,6 +319,17 @@ EOT
         }
 
         return $this->evaluate($this->cache['where'], $fields);
+    }
+
+    private function whereBelow($fields)
+    {
+        $this->cache['below-where'] = $this->cache['below-where'] ?? $this->input->getOption('below-where');
+
+        if ($this->cache['below-where'] === null) {
+            return true;
+        }
+
+        return $this->evaluate($this->cache['below-where'], $fields);
     }
 
     private function orderBy(&$buffer)

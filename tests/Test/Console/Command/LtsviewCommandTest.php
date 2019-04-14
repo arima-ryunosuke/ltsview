@@ -170,6 +170,22 @@ colA:345	colC:fu ga yo7
         ], eval("return $result;"), "Actual:\n$result");
     }
 
+    function test_below_where()
+    {
+        $result = $this->runApp([
+            'from'          => [__DIR__ . '/_files/log2.ltsv'],
+            '--where'       => 'in_array($colA, [789, 678])',
+            '--below'       => 3,
+            '--below-where' => 'in_array($colB, ["DDD", "JJJ"])',
+        ]);
+        $this->assertEquals([
+            ['colA' => '789', 'colB' => 'CCC', 'colC' => 'fu ga yo3',],
+            ['colA' => '234', 'colB' => 'DDD', 'colC' => 'fu ga yo4',],
+            ['colA' => '678', 'colB' => 'HHH', 'colC' => 'fu ga yo8',],
+            ['colA' => '999', 'colB' => 'JJJ', 'colC' => 'fu ga yo10',],
+        ], eval("return $result;"), "Actual:\n$result");
+    }
+
     function test_order_by()
     {
         $result = $this->runApp([
@@ -316,6 +332,26 @@ colA:345	colC:fu ga yo7
             ['colC' => '7',],
             ['colC' => '9',],
             ['colC' => '3',],
+            ['colC' => '2',],
+            ['colC' => '8',],
+        ], eval("return $result;"), "Actual:\n$result");
+    }
+
+    function test_order_by_below_where()
+    {
+        $result = $this->runApp([
+            'from'          => [__DIR__ . '/_files/log3.ltsv'],
+            '--select'      => 'colC',
+            '--where'       => '$colC == 2',
+            '--below'       => 3,
+            '--below-where' => '$colB == "k"',
+            '--order-by'    => 'colC',
+        ]);
+        $this->assertEquals([
+            ['colC' => '2',],
+            ['colC' => '5',],
+            ['colC' => '2',],
+            ['colC' => '2',],
             ['colC' => '2',],
             ['colC' => '8',],
         ], eval("return $result;"), "Actual:\n$result");
