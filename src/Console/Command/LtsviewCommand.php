@@ -165,7 +165,7 @@ EOT
                     continue;
                 }
 
-                $this->output->write($type->meta($fname, $n + 1));
+                $this->output->write($type->meta($fname, $n));
                 $this->output->write($type->body($columns));
 
                 foreach ($children as $child) {
@@ -173,7 +173,7 @@ EOT
                         break 2;
                     }
                     list(, $fname, $n, $columns) = $child;
-                    $this->output->write($type->meta($fname, $n + 1));
+                    $this->output->write($type->meta($fname, $n));
                     $this->output->write($type->body($columns));
                 }
 
@@ -207,7 +207,7 @@ EOT
                     continue;
                 }
 
-                $this->output->write($type->meta($fname, $n + 1));
+                $this->output->write($type->meta($fname, $n));
                 $this->output->write($type->body($columns));
 
                 if (!$this->limit(++$count)) {

@@ -445,4 +445,45 @@ colA:345	colC:fu ga yo7
             ['colA' => '789', 'dummy' => null, 'colC' => 'ho ge ra3',],
         ], eval("return $result;"), "Actual:\n$result");
     }
+
+    function test_linenumber()
+    {
+        $fname = realpath(__DIR__ . '/_files/log3.ltsv');
+
+        $result = $this->runApp([
+            'from'        => [$fname],
+            '--nocomment' => false,
+            '--format'    => 'yaml',
+        ]);
+        $this->assertContains("--- # $fname:1", $result);
+        $this->assertContains("--- # $fname:2", $result);
+        $this->assertContains("--- # $fname:3", $result);
+
+        $result = $this->runApp([
+            'from'        => [$fname],
+            '--nocomment' => false,
+            '--format'    => 'yaml',
+            '--offset'    => 1,
+            '--limit'     => 2,
+        ]);
+        $this->assertContains("--- # $fname:2", $result);
+        $this->assertContains("--- # $fname:3", $result);
+
+        $result = $this->runApp([
+            'from'          => [$fname],
+            '--nocomment'   => false,
+            '--format'      => 'yaml',
+            '--select'      => 'colC',
+            '--where'       => '$colC == 2',
+            '--below'       => 3,
+            '--below-where' => '$colB == "k"',
+            '--order-by'    => 'colC',
+        ]);
+        $this->assertContains("--- # $fname:1", $result);
+        $this->assertContains("--- # $fname:4", $result);
+        $this->assertContains("--- # $fname:6", $result);
+        $this->assertContains("--- # $fname:10", $result);
+        $this->assertContains("--- # $fname:15", $result);
+        $this->assertContains("--- # $fname:16", $result);
+    }
 }
