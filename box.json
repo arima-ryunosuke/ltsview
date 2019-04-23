@@ -23,7 +23,8 @@
         "vendor/symfony/console",
         "vendor/symfony/polyfill-ctype",
         "vendor/symfony/polyfill-mbstring",
-        "vendor/symfony/yaml"
+        "vendor/symfony/yaml",
+        "vendor/phpseclib"
       ]
     }
   ],
