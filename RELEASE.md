@@ -20,6 +20,12 @@
 
 - 選択ソートを使えばソート中の出力が行えるかも？
 
+## 1.0.3
+
+- [feature] regex オプションを実装
+- [feature] sftp に対応
+- [fixbug] 行番号が+1で表示される不具合を修正
+
 ## 1.0.2
 
 - [feature] below-where を実装

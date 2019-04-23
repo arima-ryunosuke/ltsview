@@ -20,24 +20,36 @@ Usage:
   ltsview [options] [--] [<from>]...
 
 Arguments:
-  from                           Specify input file. '-' means STDIN
+  from                           Specify input file. '-' means STDIN. and support stream wrapper.
+                                 - e.g. local file:    /path/to/ltsv
+                                 - e.g. specify stdin: -
+                                 - e.g. sftp protocol1: sftp://user:pass@host/path/to/ltsv (embedded password. very dangerous)
+                                 - e.g. sftp protocol2: sftp://user:-@host/path/to/ltsv (usgin stdin input)
+                                 - e.g. sftp protocol3: sftp://user@host/path/to/ltsv (usgin ssh agent)
+                                 
 
 Options:
+  -e, --regex=REGEX              Specify regex for not lstv file (only named subpattern).
+                                 - e.g. combined log: --regex '/^(?<host>.*?) (.*?) (.*?) \[(?<time>.*?)\] "(?<request>.*?)" (?<status>.*?) (?<size>.*?) "(?<referer>.*?)" "(?<uagent>.*?)"$/'
+                                 - e.g. preset file:  --regex ./combined.txt
+                                 
   -s, --select=SELECT            Specify view column. Can use modifier/virtual column by php expression.
                                  - e.g. select 2 column: --select 'colA, colB'
                                  - e.g. ignore 1 column: --select '~colC'
                                  - e.g. column modifier: --select 'colA@strtoupper'
-                                 - e.g. virtual column: --select 'hoge:`strtoupper($colA)`'
+                                 - e.g. virtual column:  --select 'hoge:`strtoupper($colA)`'
                                  - e.g. all and virtual: --select '*, hoge:`strtoupper($colA)`'
                                  
   -w, --where=WHERE              Specify filter statement. Can use all php functions and use virtual column (like having).
                                  - e.g. filter greater than: --where '$colA > 100'
                                  - e.g. filter match string: --where '$colA == "word"'
                                  - e.g. filter php function: --where 'ctype_digit($colA)'
+                                 
   -t, --order-by=ORDER-BY        Specify order column (+/- prefix means ASC/DESC). Can use all php functions and use virtual column.
-                                 - e.g. order DESC column: --order-by '-colA'
-                                 - e.g. order colti column: --order-by '-colA, colB'
+                                 - e.g. order DESC column:    --order-by '-colA'
+                                 - e.g. order colti column:   --order-by '-colA, colB'
                                  - e.g. order php expression: --order-by '`$colA + $colB`'
+                                 
   -o, --offset=OFFSET            Specify skip count.
   -l, --limit=LIMIT              Specify take count.
   -r, --require=REQUIRE          Specify require file.php.
