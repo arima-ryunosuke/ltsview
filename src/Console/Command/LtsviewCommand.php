@@ -2,6 +2,7 @@
 
 namespace ryunosuke\ltsv\Console\Command;
 
+use ryunosuke\ltsv\Stream\Sftp;
 use ryunosuke\ltsv\Type\AbstractType;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -31,7 +32,13 @@ class LtsviewCommand extends Command
     {
         $this->setName(self::NAME)->setDescription('pretty view ltsv format.');
         $this->setDefinition([
-            new InputArgument('from', InputArgument::OPTIONAL | InputArgument::IS_ARRAY, "Specify input file. '-' means STDIN"),
+            new InputArgument('from', InputArgument::OPTIONAL | InputArgument::IS_ARRAY, "Specify input file. '-' means STDIN. and support stream wrapper.
+                - e.g. local file:    /path/to/ltsv
+                - e.g. specify stdin: -
+                - e.g. sftp protocol1: sftp://user:pass@host/path/to/ltsv (embedded password. very dangerous)
+                - e.g. sftp protocol2: sftp://user:-@host/path/to/ltsv (usgin stdin input)
+                - e.g. sftp protocol3: sftp://user@host/path/to/ltsv (usgin ssh agent)
+            "),
             new InputOption('select', 's', InputOption::VALUE_REQUIRED, "Specify view column. Can use modifier/virtual column by php expression.
                 - e.g. select 2 column: --select 'colA, colB'
                 - e.g. ignore 1 column: --select '~colC'
@@ -210,6 +217,7 @@ EOT
 
     private function from()
     {
+        Sftp::register();
         $froms = (array) ($this->input->getArgument('from') ?: '-');
         $seq = 0;
         foreach ($froms as $from) {

@@ -6,6 +6,10 @@
         </testsuite>
     </testsuites>
 
+    <php>
+        <const name="SFTP" value="sftp://user:pass@localhost:22/path/to/ltsv"/>
+    </php>
+
     <filter>
         <whitelist>
             <directory suffix=".php">../src/</directory>
