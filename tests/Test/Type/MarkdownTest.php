@@ -2,8 +2,6 @@
 
 namespace ryunosuke\test\Type;
 
-use ryunosuke\ltsv\Type\AbstractType;
-
 class MarkdownTest extends AbstractTestCase
 {
     protected function setUp()

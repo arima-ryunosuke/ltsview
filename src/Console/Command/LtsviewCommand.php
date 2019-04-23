@@ -41,23 +41,25 @@ class LtsviewCommand extends Command
             "),
             new InputOption('regex', 'e', InputOption::VALUE_REQUIRED, "Specify regex for not lstv file (only named subpattern).
                 - e.g. combined log: --regex '/^(?<host>.*?) (.*?) (.*?) \[(?<time>.*?)\] \"(?<request>.*?)\" (?<status>.*?) (?<size>.*?) \"(?<referer>.*?)\" \"(?<uagent>.*?)\"$/'
-                - e.g. preset file: --regex ./combined.txt
-                "),
+                - e.g. preset file:  --regex ./combined.txt
+            "),
             new InputOption('select', 's', InputOption::VALUE_REQUIRED, "Specify view column. Can use modifier/virtual column by php expression.
                 - e.g. select 2 column: --select 'colA, colB'
                 - e.g. ignore 1 column: --select '~colC'
                 - e.g. column modifier: --select 'colA@strtoupper'
-                - e.g. virtual column: --select 'hoge:`strtoupper(\$colA)`'
+                - e.g. virtual column:  --select 'hoge:`strtoupper(\$colA)`'
                 - e.g. all and virtual: --select '*, hoge:`strtoupper(\$colA)`'
-                "),
+            "),
             new InputOption('where', 'w', InputOption::VALUE_REQUIRED, "Specify filter statement. Can use all php functions and use virtual column (like having).
                 - e.g. filter greater than: --where '\$colA > 100'
                 - e.g. filter match string: --where '\$colA == \"word\"'
-                - e.g. filter php function: --where 'ctype_digit(\$colA)'"),
+                - e.g. filter php function: --where 'ctype_digit(\$colA)'
+            "),
             new InputOption('order-by', 't', InputOption::VALUE_REQUIRED, "Specify order column (+/- prefix means ASC/DESC). Can use all php functions and use virtual column.
-                - e.g. order DESC column: --order-by '-colA'
-                - e.g. order colti column: --order-by '-colA, colB'
-                - e.g. order php expression: --order-by '`\$colA + \$colB`'"),
+                - e.g. order DESC column:    --order-by '-colA'
+                - e.g. order colti column:   --order-by '-colA, colB'
+                - e.g. order php expression: --order-by '`\$colA + \$colB`'
+            "),
             new InputOption('offset', 'o', InputOption::VALUE_REQUIRED, "Specify skip count."),
             new InputOption('limit', 'l', InputOption::VALUE_REQUIRED, "Specify take count."),
             new InputOption('require', 'r', InputOption::VALUE_REQUIRED, "Specify require file.php."),
