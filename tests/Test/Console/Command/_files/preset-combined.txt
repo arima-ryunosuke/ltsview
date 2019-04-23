@@ -1,0 +1,13 @@
+@^
+  (?<host>.*?)\s      # e.g. 127.0.0.1
+  (.*?)\s             # e.g. -
+  (.*?)\s             # e.g. -
+  \[(?<time>.*?)\]\s  # e.g. [21/Apr/2019:12:34:56 +0900]
+  "(?<method>.*?)\s   # e.g. GET
+  (?<path>.*?)\s      # e.g. /path/to/file1
+  (?<protocol>.*?)"\s # e.g. HTTP/1.1
+  (?<status>.*?)\s    # e.g. 200
+  (?<size>.*?)\s      # e.g. 12345
+  "(?<referer>.*?)"\s # e.g. http://example.com/referer
+  "(?<uagent>.*?)"    # e.g. Mozilla/5.0 Custom Browser
+$@x

@@ -39,6 +39,10 @@ class LtsviewCommand extends Command
                 - e.g. sftp protocol2: sftp://user:-@host/path/to/ltsv (usgin stdin input)
                 - e.g. sftp protocol3: sftp://user@host/path/to/ltsv (usgin ssh agent)
             "),
+            new InputOption('regex', 'e', InputOption::VALUE_REQUIRED, "Specify regex for not lstv file (only named subpattern).
+                - e.g. combined log: --regex '/^(?<host>.*?) (.*?) (.*?) \[(?<time>.*?)\] \"(?<request>.*?)\" (?<status>.*?) (?<size>.*?) \"(?<referer>.*?)\" \"(?<uagent>.*?)\"$/'
+                - e.g. preset file: --regex ./combined.txt
+                "),
             new InputOption('select', 's', InputOption::VALUE_REQUIRED, "Specify view column. Can use modifier/virtual column by php expression.
                 - e.g. select 2 column: --select 'colA, colB'
                 - e.g. ignore 1 column: --select '~colC'
@@ -218,6 +222,10 @@ EOT
     private function from()
     {
         Sftp::register();
+        $regex = $this->input->getOption('regex');
+        if (file_exists($regex)) {
+            $regex = trim(file_get_contents($regex));
+        }
         $froms = (array) ($this->input->getArgument('from') ?: '-');
         $seq = 0;
         foreach ($froms as $from) {
@@ -226,7 +234,21 @@ EOT
             while (($line = fgets($handle)) !== false) {
                 $n++;
                 if (strlen(trim($line))) {
-                    yield [$seq++, $from, $n, str_array(explode("\t", $line), ':', true)];
+                    if ($regex) {
+                        if (!preg_match($regex, $line, $m)) {
+                            continue;
+                        }
+                        $ltsv = [];
+                        foreach ($m as $name => $value) {
+                            if (is_string($name)) {
+                                $ltsv[trim($name)] = trim($value);
+                            }
+                        }
+                    }
+                    else {
+                        $ltsv = str_array(explode("\t", $line), ':', true);
+                    }
+                    yield [$seq++, $from, $n, $ltsv];
                 }
             }
         }

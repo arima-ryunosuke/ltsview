@@ -76,6 +76,41 @@ colA:345	colC:fu ga yo7
         ], eval("return $result;"), "Actual:\n$result");
     }
 
+    function test_from_regex()
+    {
+        $result = $this->runApp([
+            'from'    => __DIR__ . '/_files/apache.log',
+            '--regex' => '/^(?<host>.*?) (.*?) (.*?) \[(?<time>.*?)\] "(?<request>.*?)" (?<status>.*?) (?<size>.*?) "(?<referer>.*?)" "(?<uagent>.*?)"$/',
+        ]);
+        $this->assertEquals([
+            ['host' => '127.0.0.1', 'time' => '21/Apr/2019:12:34:56 +0900', 'request' => 'GET /path/to/file1 HTTP/1.1', 'status' => '200', 'size' => '12345', 'referer' => '-', 'uagent' => 'Mozilla/5.0 Custom Browser',],
+            ['host' => '127.0.0.2', 'time' => '21/Apr/2019:13:12:33 +0900', 'request' => 'GET /path/to/file2 HTTP/1.1', 'status' => '200', 'size' => '54321', 'referer' => '-', 'uagent' => 'Mozilla/5.0 Custom Browser',],
+            ['host' => '127.0.0.1', 'time' => '21/Apr/2019:14:47:28 +0900', 'request' => 'GET /path/to/file1 HTTP/1.1', 'status' => '200', 'size' => '23456', 'referer' => '-', 'uagent' => 'Mozilla/5.0 Custom Browser',],
+            ['host' => '127.0.0.1', 'time' => '21/Apr/2019:15:51:39 +0900', 'request' => 'GET /path/to/file2 HTTP/1.1', 'status' => '200', 'size' => '67890', 'referer' => '-', 'uagent' => 'Mozilla/5.0 Custom Browser',],
+            ['host' => '127.0.0.2', 'time' => '21/Apr/2019:16:12:46 +0900', 'request' => 'GET /path/to/file1 HTTP/1.1', 'status' => '200', 'size' => '34567', 'referer' => '-', 'uagent' => 'Mozilla/5.0 Custom Browser',],
+        ], eval("return $result;"), "Actual:\n$result");
+
+        $result = $this->runApp([
+            'from'     => __DIR__ . '/_files/apache.log',
+            '--regex'  => __DIR__ . '/_files/preset-combined.txt',
+            '--select' => '*, time:`date("Y/m/d H:i:s", strtotime($time))`',
+            '--where'  => '$host == "127.0.0.2" && $size > 50000',
+        ]);
+        $this->assertEquals([
+            [
+                'host'     => '127.0.0.2',
+                'time'     => '2019/04/21 13:12:33',
+                'method'   => 'GET',
+                'path'     => '/path/to/file2',
+                'protocol' => 'HTTP/1.1',
+                'status'   => '200',
+                'size'     => '54321',
+                'referer'  => '-',
+                'uagent'   => 'Mozilla/5.0 Custom Browser',
+            ],
+        ], eval("return $result;"), "Actual:\n$result");
+    }
+
     function test_select()
     {
         $result = $this->runApp([
