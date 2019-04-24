@@ -12,15 +12,29 @@ class Yaml extends AbstractType
         if ($this->comment_mode) {
             $result .= " # $file:$n";
         }
-        return "$result\n";
+        return $this->colorComment("$result\n");
     }
 
     public function body($fields)
     {
         if ($this->compact_mode) {
-            return \Symfony\Component\Yaml\Yaml::dump($fields, 0) . "\n";
+            $result = [];
+            foreach ($fields as $label => $value) {
+                $hlabel = $this->colorLabel($label);
+                $hvalue = $this->colorValue(\Symfony\Component\Yaml\Yaml::dump($value));
+                $result[] = "$hlabel: $hvalue";
+            }
+            return "{" . implode(",", $result) . "}\n";
         }
-        return \Symfony\Component\Yaml\Yaml::dump($fields);
+        else {
+            $result = [];
+            foreach ($fields as $label => $value) {
+                $hlabel = $this->colorLabel($label);
+                $hvalue = $this->colorValue(\Symfony\Component\Yaml\Yaml::dump($value));
+                $result[] = "$hlabel: $hvalue";
+            }
+            return implode("\n", $result) . "\n";
+        }
     }
 
     public function foot() { }

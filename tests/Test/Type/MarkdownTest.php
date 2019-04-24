@@ -27,7 +27,11 @@ class MarkdownTest extends AbstractTestCase
 
     function test_meta()
     {
-        $type = $this->getType(false, false);
+        $type = $this->getType([
+            'comment' => false,
+            'compact' => false,
+            'color'   => false,
+        ]);
         $fields = ['a' => 'A', 'b' => 'B', 'c' => 'C'];
         $buffer = '';
         $buffer .= $type->head(array_keys($fields));

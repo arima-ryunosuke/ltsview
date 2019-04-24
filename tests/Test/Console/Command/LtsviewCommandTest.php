@@ -15,6 +15,7 @@ class LtsviewCommandTest extends AbstractTestCase
         '--format'    => 'php',
         '--nocomment' => true,
         '--compact'   => true,
+        '--nocolor'   => true,
     ];
 
     private $stdin;

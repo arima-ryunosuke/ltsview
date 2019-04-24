@@ -3,8 +3,6 @@
 namespace ryunosuke\test\Type;
 
 use ryunosuke\ltsv\Type\AbstractType;
-use ryunosuke\ltsv\Type\Markdown;
-use ryunosuke\ltsv\Type\Yaml;
 
 abstract class AbstractTestCase extends \ryunosuke\test\AbstractTestCase
 {
@@ -16,24 +14,21 @@ abstract class AbstractTestCase extends \ryunosuke\test\AbstractTestCase
     /** @var callable */
     protected $decoder;
 
-    protected function getType($meta, $compact)
+    protected function getType($option)
     {
         $name = preg_replace('#Test$#', '', array_slice(explode("\\", get_class($this)), -1)[0]);
-        return AbstractType::instance(strtolower($name), $meta, $compact);
+        return AbstractType::instance(strtolower($name), $option);
     }
 
     protected function setUp()
     {
         parent::setUp();
 
-        $this->type = $this->getType($this->meta, false);
-    }
-
-    function test_instance()
-    {
-        $this->assertInstanceOf(Yaml::class, AbstractType::instance('yml', false, false));
-        $this->assertInstanceOf(Markdown::class, AbstractType::instance('md', false, false));
-        $this->assertException('not supported', [AbstractType::class, 'instance'], 'hoge');
+        $this->type = $this->getType([
+            'comment' => $this->meta,
+            'compact' => false,
+            'color'   => false,
+        ]);
     }
 
     function test_syntax()

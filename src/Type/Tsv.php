@@ -7,7 +7,7 @@ class Tsv extends AbstractType
     public function head($column)
     {
         if ($this->comment_mode) {
-            return implode("\t", $column) . "\n";
+            return $this->colorComment(implode("\t", $column)) . "\n";
         }
     }
 
@@ -15,7 +15,7 @@ class Tsv extends AbstractType
 
     public function body($fields)
     {
-        return implode("\t", $fields) . "\n";
+        return $this->colorValue(implode("\t", $fields)) . "\n";
     }
 
     public function foot() { }

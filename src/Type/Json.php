@@ -29,17 +29,34 @@ class Json extends AbstractType
             $prefix = ",\n";
         }
 
-        if ($this->meta) {
-            $fields = ['//' => $this->meta] + $fields;
-        }
-
+        end($fields);
+        $lastkey = key($fields);
         $jopt = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK | JSON_PRESERVE_ZERO_FRACTION;
+
         if ($this->compact_mode) {
-            $json = json_encode((object) $fields, $jopt);
-            return $prefix . '    ' . $json;
+            $result = [];
+            if ($this->meta) {
+                $result[] = $this->colorComment('"//": ' . json_encode($this->meta, $jopt)) . ($fields ? "," : "");
+            }
+            foreach ($fields as $label => $value) {
+                $hlabel = $this->colorLabel(json_encode($label, $jopt));
+                $hvalue = $this->colorValue(json_encode($value, $jopt));
+                $result[] = "$hlabel:$hvalue" . ($label !== $lastkey ? "," : "");
+            }
+            return "$prefix    {" . implode("", $result) . "}";
         }
-        $json = json_encode([(object) $fields], JSON_PRETTY_PRINT | $jopt);
-        return $prefix . trim($json, "[\r\n]");
+        else {
+            $result = [];
+            if ($this->meta) {
+                $result[] = "        " . $this->colorComment('"//": ' . json_encode($this->meta, $jopt)) . ($fields ? "," : "");
+            }
+            foreach ($fields as $label => $value) {
+                $hlabel = $this->colorLabel(json_encode($label, $jopt));
+                $hvalue = $this->colorValue(json_encode($value, $jopt));
+                $result[] = "        $hlabel: $hvalue" . ($label !== $lastkey ? "," : "");
+            }
+            return "$prefix    {\n" . implode("\n", $result) . "\n    }";
+        }
     }
 
     public function foot()

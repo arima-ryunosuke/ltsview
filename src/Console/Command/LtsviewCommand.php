@@ -69,6 +69,7 @@ class LtsviewCommand extends Command
             new InputOption('below-where', 'W', InputOption::VALUE_REQUIRED, "Specify below filter statement."),
             new InputOption('compact', null, InputOption::VALUE_NONE, "Switch compact output."),
             new InputOption('nocomment', 'C', InputOption::VALUE_NONE, "Switch comment output."),
+            new InputOption('nocolor', 'H', InputOption::VALUE_NONE, "Switch color output."),
             new InputOption('noerror', 'E', InputOption::VALUE_NONE, "Switch error output."),
         ]);
         $this->setHelp(<<<EOT
@@ -116,15 +117,17 @@ EOT
 
     private function main()
     {
+        Sftp::register();
         $this->cache = [];
 
         $format = $this->input->getOption('format');
         $below = (int) $this->input->getOption('below');
-        $comment = !$this->input->getOption('nocomment');
-        $compact = !!$this->input->getOption('compact');
 
-        $type = AbstractType::instance($format, $comment, $compact);
-
+        $type = AbstractType::instance($format, [
+            'comment' => !$this->input->getOption('nocomment'),
+            'compact' => !!$this->input->getOption('compact'),
+            'color'   => !$this->input->getOption('nocolor'),
+        ]);
 
         $this->output->write($type->head($this->column()));
 
@@ -224,7 +227,6 @@ EOT
 
     private function from()
     {
-        Sftp::register();
         $regex = $this->input->getOption('regex');
         if (file_exists($regex)) {
             $regex = trim(file_get_contents($regex));

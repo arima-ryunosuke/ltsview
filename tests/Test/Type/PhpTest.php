@@ -15,10 +15,14 @@ class PhpTest extends AbstractTestCase
 
     function test_compact()
     {
-        $type = $this->getType(false, true);
+        $type = $this->getType([
+            'comment' => false,
+            'compact' => true,
+            'color'   => false,
+        ]);
         $fields = ['a' => 'A', 'b' => 'B', 'c' => 'C'];
         $buffer = $type->body($fields);
         $this->assertEquals([$fields], ($this->decoder)("[$buffer]"), "Actual:\n$buffer");
-        $this->assertEquals("    ['a'=>'A','b'=>'B','c'=>'C',],\n", $buffer, "Actual:\n$buffer");
+        $this->assertEquals("    ['a'=>'A','b'=>'B','c'=>'C'],\n", $buffer, "Actual:\n$buffer");
     }
 }

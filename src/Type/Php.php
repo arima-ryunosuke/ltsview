@@ -12,25 +12,29 @@ class Php extends AbstractType
     public function meta($file, $n)
     {
         if ($this->comment_mode) {
-            return "    // $file:$n\n";
+            return $this->colorComment("    // $file:$n\n");
         }
     }
 
     public function body($fields)
     {
         if ($this->compact_mode) {
-            $result = "    [";
+            $result = [];
             foreach ($fields as $label => $value) {
-                $result .= var_export($label, true) . "=>" . var_export($value, true) . ",";
+                $hlabel = $this->colorLabel(var_export($label, true));
+                $hvalue = $this->colorValue(var_export($value, true));
+                $result[] = "$hlabel=>$hvalue";
             }
-            return $result . "],\n";
+            return "    [" . implode(",", $result) . "],\n";
         }
         else {
-            $result = "    [\n";
+            $result = [];
             foreach ($fields as $label => $value) {
-                $result .= "        " . var_export($label, true) . " => " . var_export($value, true) . ",\n";
+                $hlabel = $this->colorLabel(var_export($label, true));
+                $hvalue = $this->colorValue(var_export($value, true));
+                $result[] = "        $hlabel => $hvalue,";
             }
-            return $result . "    ],\n";
+            return "    [\n" . implode("\n", $result) . "\n    ],\n";
         }
     }
 

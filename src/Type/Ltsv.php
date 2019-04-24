@@ -10,7 +10,13 @@ class Ltsv extends AbstractType
 
     public function body($fields)
     {
-        return array_sprintf($fields, '%2$s:%1$s', "\t") . "\n";
+        $result = [];
+        foreach ($fields as $label => $value) {
+            $hlabel = $this->colorLabel($label);
+            $hvalue = $this->colorValue($value);
+            $result[] = "$hlabel:$hvalue";
+        }
+        return implode("\t", $result) . "\n";
     }
 
     public function foot() { }

@@ -6,33 +6,35 @@ abstract class AbstractType
 {
     protected $comment_mode;
     protected $compact_mode;
+    protected $color_mode;
 
-    public static function instance($type, ...$args)
+    public static function instance($type, $option)
     {
         switch ($type) {
             default:
                 throw new \InvalidArgumentException("$type type is not supported.");
             case 'json':
-                return new Json(...$args);
+                return new Json($option);
             case 'ltsv':
-                return new Ltsv(...$args);
+                return new Ltsv($option);
             case 'php':
-                return new Php(...$args);
+                return new Php($option);
             case 'yaml':
             case 'yml':
-                return new Yaml(...$args);
+                return new Yaml($option);
             case 'tsv':
-                return new Tsv(...$args);
+                return new Tsv($option);
             case 'markdown':
             case 'md':
-                return new Markdown(...$args);
+                return new Markdown($option);
         }
     }
 
-    public function __construct($comment_mode, $compact_mode)
+    public function __construct($option)
     {
-        $this->comment_mode = $comment_mode;
-        $this->compact_mode = $compact_mode;
+        $this->comment_mode = $option['comment'];
+        $this->compact_mode = $option['compact'];
+        $this->color_mode = $option['color'];
     }
 
     abstract public function head($column);
@@ -42,4 +44,28 @@ abstract class AbstractType
     abstract public function body($fields);
 
     abstract public function foot();
+
+    protected function colorComment($string)
+    {
+        if ($this->color_mode) {
+            return "<fg=yellow>{$string}</>";
+        }
+        return $string;
+    }
+
+    protected function colorLabel($string)
+    {
+        if ($this->color_mode) {
+            return "<fg=magenta>{$string}</>";
+        }
+        return $string;
+    }
+
+    protected function colorValue($string)
+    {
+        if ($this->color_mode) {
+            return "<fg=green>{$string}</>";
+        }
+        return $string;
+    }
 }
