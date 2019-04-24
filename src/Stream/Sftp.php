@@ -22,8 +22,10 @@ class Sftp extends \phpseclib\Net\SFTP\Stream
             'port' => 22,
         ]);
 
-        if (isset(static::$instances[$path])) {
-            $this->sftp = static::$instances[$path];
+        $cachekey = $parts['user'] . '@' . $parts['host'] . ':' . $parts['port'];
+
+        if (isset(static::$instances[$cachekey])) {
+            $this->sftp = static::$instances[$cachekey];
         }
         else {
             $this->sftp = new \phpseclib\Net\SFTP($parts['host'], $parts['port']);
@@ -46,7 +48,7 @@ class Sftp extends \phpseclib\Net\SFTP\Stream
                 return false;
             }
 
-            static::$instances[$path] = $this->sftp;
+            static::$instances[$cachekey] = $this->sftp;
         }
 
         return $parts['path'];
