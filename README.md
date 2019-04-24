@@ -21,11 +21,12 @@ Usage:
 
 Arguments:
   from                           Specify input file. '-' means STDIN. and support stream wrapper.
-                                 - e.g. local file:    /path/to/ltsv
-                                 - e.g. specify stdin: -
+                                 - e.g. local file:     /path/to/ltsv
+                                 - e.g. specify stdin:  -
                                  - e.g. sftp protocol1: sftp://user:pass@host/path/to/ltsv (embedded password. very dangerous)
-                                 - e.g. sftp protocol2: sftp://user:-@host/path/to/ltsv (usgin stdin input)
-                                 - e.g. sftp protocol3: sftp://user@host/path/to/ltsv (usgin ssh agent)
+                                 - e.g. sftp protocol2: sftp://user:-@host/path/to/ltsv (using stdin input)
+                                 - e.g. sftp protocol3: sftp://user@host/path/to/ltsv (using ssh agent)
+                                 - e.g. sftp protocol4: sftp://sshconfig-host/path/to/ltsv (using ssh config)
                                  
 
 Options:
@@ -58,6 +59,7 @@ Options:
   -W, --below-where=BELOW-WHERE  Specify below filter statement.
       --compact                  Switch compact output.
   -C, --nocomment                Switch comment output.
+  -H, --nocolor                  Switch color output.
   -E, --noerror                  Switch error output.
   -h, --help                     Display this help message
   -q, --quiet                    Do not output any message
