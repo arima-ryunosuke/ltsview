@@ -33,11 +33,12 @@ class LtsviewCommand extends Command
         $this->setName(self::NAME)->setDescription('pretty view ltsv format.');
         $this->setDefinition([
             new InputArgument('from', InputArgument::OPTIONAL | InputArgument::IS_ARRAY, "Specify input file. '-' means STDIN. and support stream wrapper.
-                - e.g. local file:    /path/to/ltsv
-                - e.g. specify stdin: -
+                - e.g. local file:     /path/to/ltsv
+                - e.g. specify stdin:  -
                 - e.g. sftp protocol1: sftp://user:pass@host/path/to/ltsv (embedded password. very dangerous)
-                - e.g. sftp protocol2: sftp://user:-@host/path/to/ltsv (usgin stdin input)
-                - e.g. sftp protocol3: sftp://user@host/path/to/ltsv (usgin ssh agent)
+                - e.g. sftp protocol2: sftp://user:-@host/path/to/ltsv (using stdin input)
+                - e.g. sftp protocol3: sftp://user@host/path/to/ltsv (using ssh agent)
+                - e.g. sftp protocol4: sftp://sshconfig-host/path/to/ltsv (using ssh config)
             "),
             new InputOption('regex', 'e', InputOption::VALUE_REQUIRED, "Specify regex for not lstv file (only named subpattern).
                 - e.g. combined log: --regex '/^(?<host>.*?) (.*?) (.*?) \[(?<time>.*?)\] \"(?<request>.*?)\" (?<status>.*?) (?<size>.*?) \"(?<referer>.*?)\" \"(?<uagent>.*?)\"$/'
