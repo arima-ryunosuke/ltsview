@@ -247,6 +247,31 @@ colA:345	colC:fu ga yo7
             ['colA' => '4', 'colB' => 'k', 'colC' => '5',],
             ['colA' => '3', 'colB' => 'k', 'colC' => '8',],
         ], eval("return $result;"), "Actual:\n$result");
+
+        $result = $this->runApp([
+            'from'       => [__DIR__ . '/_files/log3.ltsv'],
+            '--select'   => 'aliasA:`$colA`',
+            '--order-by' => 'colA',
+        ]);
+        $this->assertEquals([
+            ['aliasA' => '1'],
+            ['aliasA' => '1'],
+            ['aliasA' => '2'],
+            ['aliasA' => '3'],
+            ['aliasA' => '4'],
+            ['aliasA' => '4'],
+            ['aliasA' => '5'],
+            ['aliasA' => '5'],
+            ['aliasA' => '6'],
+            ['aliasA' => '7'],
+            ['aliasA' => '7'],
+            ['aliasA' => '8'],
+            ['aliasA' => '9'],
+            ['aliasA' => '10'],
+            ['aliasA' => '10'],
+            ['aliasA' => '11'],
+            ['aliasA' => '11'],
+        ], eval("return $result;"), "Actual:\n$result");
     }
 
     function test_order_by_vcolumn()

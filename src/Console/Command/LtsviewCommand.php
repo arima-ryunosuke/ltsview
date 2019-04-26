@@ -161,7 +161,7 @@ EOT
                 }
             }
 
-            $this->orderBy($buffer);
+            $this->orderBy($buffer, 4);
 
             $index = $count = 0;
             foreach ($buffer as $it) {
@@ -367,7 +367,7 @@ EOT
         return $this->evaluate($this->cache['below-where'], $fields);
     }
 
-    private function orderBy(&$buffer)
+    private function orderBy(&$buffer, $allindex)
     {
         $this->cache['order-by'] = $this->cache['order-by'] ?? (function () {
                 $orderBy = [];
@@ -391,14 +391,14 @@ EOT
                 return $orderBy;
             })();
 
-        usort($buffer, function ($a, $b) {
+        usort($buffer, function ($a, $b) use ($allindex) {
             foreach ($this->cache['order-by'] as $orderBy) {
                 list($key, $ord, $expr) = $orderBy;
                 if ($expr) {
-                    $delta = $expr($key, $a[3]) <=> $expr($key, $b[3]);
+                    $delta = $expr($key, $a[$allindex]) <=> $expr($key, $b[$allindex]);
                 }
                 else {
-                    $delta = $a[3][$key] <=> $b[3][$key];
+                    $delta = $a[$allindex][$key] <=> $b[$allindex][$key];
                 }
                 if ($delta !== 0) {
                     if (!$ord) {
