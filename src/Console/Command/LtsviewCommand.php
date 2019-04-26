@@ -13,7 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class LtsviewCommand extends Command
 {
     public const NAME    = 'ltsview';
-    public const VERSION = '1.0.4';
+    public const VERSION = '1.0.5';
 
     private static $STDIN = STDIN;
 
