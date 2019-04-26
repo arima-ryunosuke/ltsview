@@ -77,6 +77,17 @@ colA:345	colC:fu ga yo7
         ], eval("return $result;"), "Actual:\n$result");
     }
 
+    function test_from_glob()
+    {
+        $expected = $this->runApp([
+            'from' => glob(__DIR__ . '/_files/log*.ltsv'),
+        ]);
+        $result = $this->runApp([
+            'from' => __DIR__ . '/_files/log*.ltsv',
+        ]);
+        $this->assertEquals($expected, $result);
+    }
+
     function test_from_regex()
     {
         $result = $this->runApp([

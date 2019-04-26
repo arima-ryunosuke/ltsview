@@ -113,6 +113,7 @@ EOT
             require_once $require;
         }
 
+        Sftp::register();
         ini_set('error_reporting', $this->input->getOption('noerror') ? 0 : E_ALL);
         $result = $this->main();
         ini_restore('error_reporting');
@@ -121,7 +122,6 @@ EOT
 
     private function main()
     {
-        Sftp::register();
         $this->cache = [];
 
         $format = $this->input->getOption('format');
@@ -241,11 +241,29 @@ EOT
 
     private function from()
     {
+        // shoddy emulation glob (https://www.php.net/manual/function.glob.php)
+        $froms = [];
+        foreach ((array) ($this->input->getArgument('from') ?: '-') as $from) {
+            if ($from === '-' || file_exists($from)) {
+                $froms[] = $from;
+            }
+            else {
+                $pathinfo = pathinfo($from);
+                foreach (scandir($pathinfo['dirname'], SCANDIR_SORT_NONE) as $entry) {
+                    if ($entry === '.' || $entry === '..') {
+                        continue;
+                    }
+                    if (fnmatch($pathinfo['basename'], $entry)) {
+                        $froms[] = $pathinfo['dirname'] . DIRECTORY_SEPARATOR . $entry;
+                    }
+                }
+            }
+        }
+
         $regex = $this->input->getOption('regex');
         if (file_exists($regex)) {
             $regex = trim(file_get_contents($regex));
         }
-        $froms = (array) ($this->input->getArgument('from') ?: '-');
         $seq = 0;
         foreach ($froms as $from) {
             $handle = $from === '-' ? self::$STDIN : fopen($from, 'r');
