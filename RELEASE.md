@@ -20,6 +20,14 @@
 
 - 選択ソートを使えばソート中の出力が行えるかも？
 
+## 1.0.5
+
+- [fixbug] select した列でしか order-by できない不具合を修正
+- [feature] 先頭1行の先読みに対応
+  - md や tsv などで "*" や "~col" 指定でカラムが表示されるようになった
+- [feature] distinct を実装
+- [feature] Stream Wrapper の glob に対応
+
 ## 1.0.4
 
 - [feature] 出力ハイライトに対応

@@ -34,6 +34,10 @@ Options:
                                  - e.g. combined log: --regex '/^(?<host>.*?) (.*?) (.*?) \[(?<time>.*?)\] "(?<request>.*?)" (?<status>.*?) (?<size>.*?) "(?<referer>.*?)" "(?<uagent>.*?)"$/'
                                  - e.g. preset file:  --regex ./combined.txt
                                  
+  -d, --distinct[=DISTINCT]      Specify distinct column.
+                                 - e.g. distinct all:    --distinct
+                                 - e.g. distinct column: --distinct 'colC'
+                                 
   -s, --select=SELECT            Specify view column. Can use modifier/virtual column by php expression.
                                  - e.g. select 2 column: --select 'colA, colB'
                                  - e.g. ignore 1 column: --select '~colC'
