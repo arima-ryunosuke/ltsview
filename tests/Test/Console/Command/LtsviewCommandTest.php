@@ -164,6 +164,39 @@ colA:345	colC:fu ga yo7
         ], eval("return $result;"), "Actual:\n$result");
     }
 
+    function test_select_distinct()
+    {
+        $result = $this->runApp([
+            'from'       => [__DIR__ . '/_files/log4.ltsv'],
+            '--distinct' => '',
+        ]);
+        $this->assertEquals([
+            ['colA' => 'a', 'colB' => 'b', 'colC' => 'c'],
+            ['colA' => 'A', 'colB' => 'b', 'colC' => 'c'],
+            ['colA' => 'a', 'colB' => 'B', 'colC' => 'c'],
+            ['colA' => 'a', 'colB' => 'b', 'colC' => 'C'],
+        ], eval("return $result;"), "Actual:\n$result");
+
+        $result = $this->runApp([
+            'from'       => [__DIR__ . '/_files/log4.ltsv'],
+            '--distinct' => 'colA,colC',
+        ]);
+        $this->assertEquals([
+            ['colA' => 'a', 'colB' => 'b', 'colC' => 'c'],
+            ['colA' => 'A', 'colB' => 'b', 'colC' => 'c'],
+            ['colA' => 'a', 'colB' => 'b', 'colC' => 'C'],
+        ], eval("return $result;"), "Actual:\n$result");
+
+        $result = $this->runApp([
+            'from'       => [__DIR__ . '/_files/log4.ltsv'],
+            '--distinct' => 'colB',
+        ]);
+        $this->assertEquals([
+            ['colA' => 'a', 'colB' => 'b', 'colC' => 'c'],
+            ['colA' => 'a', 'colB' => 'B', 'colC' => 'c'],
+        ], eval("return $result;"), "Actual:\n$result");
+    }
+
     function test_where()
     {
         $result = $this->runApp([

@@ -44,6 +44,10 @@ class LtsviewCommand extends Command
                 - e.g. combined log: --regex '/^(?<host>.*?) (.*?) (.*?) \[(?<time>.*?)\] \"(?<request>.*?)\" (?<status>.*?) (?<size>.*?) \"(?<referer>.*?)\" \"(?<uagent>.*?)\"$/'
                 - e.g. preset file:  --regex ./combined.txt
             "),
+            new InputOption('distinct', 'd', InputOption::VALUE_OPTIONAL, "Specify distinct column.
+                - e.g. distinct all:    --distinct
+                - e.g. distinct column: --distinct 'colC'
+            "),
             new InputOption('select', 's', InputOption::VALUE_REQUIRED, "Specify view column. Can use modifier/virtual column by php expression.
                 - e.g. select 2 column: --select 'colA, colB'
                 - e.g. ignore 1 column: --select '~colC'
@@ -135,8 +139,8 @@ EOT
 
         $this->output->write($type->head(array_keys($this->column($header))));
 
-        // orderBy requires buffering
-        if ($this->input->getOption('order-by')) {
+        // distinct/orderBy requires buffering
+        if ($this->input->hasParameterOption('--distinct') || $this->input->hasParameterOption('--order-by')) {
             $buffer = [];
             $lastindex = -1;
             while ($from->valid()) {
@@ -155,6 +159,10 @@ EOT
                     continue;
                 }
                 elseif ($belowed && !$this->whereBelow($allcols)) {
+                    continue;
+                }
+
+                if (!$this->distinct($allcols)) {
                     continue;
                 }
 
@@ -340,6 +348,26 @@ EOT
         return $result;
     }
 
+    private function distinct($fields)
+    {
+        if (!$this->input->hasParameterOption('--distinct')) {
+            return true;
+        }
+
+        $this->cache['distinct'] = $this->cache['distinct'] ?? array_fill_keys(
+                split_noempty(',', $this->input->getOption('distinct')) ?: array_keys($this->cache['column']), null
+            );
+        $this->cache['history'] = $this->cache['history'] ?? [];
+
+        $key = serialize(array_intersect_key($fields, $this->cache['distinct']));
+        if (isset($this->cache['history'][$key])) {
+            return false;
+        }
+
+        $this->cache['history'][$key] = true;
+        return true;
+    }
+
     private function where($fields)
     {
         $this->cache['where'] = $this->cache['where'] ?? $this->input->getOption('where');
@@ -364,6 +392,10 @@ EOT
 
     private function orderBy(&$buffer, $allindex)
     {
+        if (!$this->input->hasParameterOption('--order-by')) {
+            return;
+        }
+
         $this->cache['order-by'] = $this->cache['order-by'] ?? (function () {
                 $orderBy = [];
                 foreach (quoteexplode(',', $this->input->getOption('order-by'), '`') as $col) {
