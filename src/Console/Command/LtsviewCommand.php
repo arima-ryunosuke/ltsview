@@ -129,14 +129,19 @@ EOT
             'color'   => !$this->input->getOption('nocolor'),
         ]);
 
-        $this->output->write($type->head($this->column()));
+        $from = $this->from();
+        $header = (array) $from->current();
+        $from->next();
+
+        $this->output->write($type->head(array_keys($this->column($header))));
 
         // orderBy requires buffering
         if ($this->input->getOption('order-by')) {
             $buffer = [];
             $lastindex = -1;
-            foreach ($this->from() as $it) {
-                list($seq, $fname, $n, $fields) = $it;
+            while ($from->valid()) {
+                list($seq, $fname, $n, $fields) = $from->current();
+                $from->next();
 
                 $columns = $this->select($fields);
                 $allcols = $columns + $fields;
@@ -191,8 +196,9 @@ EOT
         else {
             $lastindex = -1;
             $index = $count = 0;
-            foreach ($this->from() as $it) {
-                list($seq, $fname, $n, $fields) = $it;
+            while ($from->valid()) {
+                list($seq, $fname, $n, $fields) = $from->current();
+                $from->next();
 
                 $columns = $this->select($fields);
                 $allcols = $columns + $fields;
@@ -253,93 +259,82 @@ EOT
                     else {
                         $ltsv = str_array(explode("\t", $line), ':', true);
                     }
+                    // for detect header
+                    if ($seq === 0) {
+                        yield array_keys($ltsv);
+                    }
                     yield [$seq++, $from, $n, $ltsv];
                 }
             }
         }
     }
 
-    private function column()
+    private function column($header)
     {
-        $this->cache['select'] = $this->cache['select'] ??
-            chain($this->input->getOption('select'))
-                ->quoteexplode1(',', '`')
-                ->map('trim')
-                ->filter('strlen')
-            ();
-
-        $this->cache['column'] = $this->cache['column'] ??
-            chain($this->cache['select'])
-                ->filterE('[0] !== "~"')
-                ->map(function ($key) { return trim(explode(':', $key, 2)[0], '`'); })
-            ();
+        // pattern1: column:constant
+        // pattern2: column:`expression`
+        // pattern3: column@modifier
+        // pattern4: `expression`
+        // pattern5: *
+        // pattern6: ~ignorecolumn
+        // pattern7: simplecolumn
+        $this->cache['column'] = $this->cache['column'] ?? (function ($header) {
+                $column = [];
+                $ignore = [];
+                foreach (quoteexplode(',', $this->input->getOption('select'), '`') as $select) {
+                    $select = trim($select);
+                    if (!strlen($select)) {
+                        continue;
+                    }
+                    $colon = strpos($select, ':') !== false;
+                    $atmark = strpos($select, '@') !== false;
+                    $backq = strpos($select, '`') !== false;
+                    if ($colon && !$backq) {
+                        list($select, $expr) = array_map('trim', explode(':', $select, 2));
+                        $column[$select] = $expr;
+                    }
+                    elseif ($colon && $backq) {
+                        list($select, $expr) = array_map('trim', explode(':', $select, 2));
+                        $column[$select] = $this->evaluate(trim($expr, '`'));
+                    }
+                    elseif ($atmark && !$backq) {
+                        list($select, $expr) = array_map('trim', explode('@', $select, 2));
+                        $column[$select] = $this->evaluate("$expr(\$$select)");
+                    }
+                    elseif ($backq) {
+                        $select = trim($select, '`');
+                        $column[$select] = $this->evaluate($select);
+                    }
+                    elseif ($select === '*') {
+                        $column = array_fill_keys($header, null);
+                    }
+                    elseif ($select[0] === '~') {
+                        $ignore[ltrim($select, '~')] = true;
+                    }
+                    else {
+                        $column[$select] = null;
+                    }
+                }
+                return array_diff_key($column ?: array_fill_keys($header, null), $ignore);
+            })($header);
 
         return $this->cache['column'];
     }
 
     private function select($fields)
     {
-        $result = $this->column() ? [] : $fields;
+        $result = [];
 
-        // pattern1: column:`expression`
-        // pattern2: column:constant
-        // pattern3: column@modifier
-        // pattern4: `expression`
-        // pattern5: *
-        // pattern6: ~ignorecolumn
-        // pattern7: simplecolumn
-        $this->cache['mapper'] = $this->cache['mapper'] ?? (function () {
-                $mapper = [];
-                foreach ($this->cache['select'] as $key) {
-                    $colon = strpos($key, ':') !== false;
-                    $atmark = strpos($key, '@') !== false;
-                    $backq = strpos($key, '`') !== false;
-                    if ($colon && $backq) {
-                        list($key, $expr) = array_map('trim', explode(':', $key, 2));
-                        $expr = trim($expr, '`');
-                        $mapper[$key] = function ($key, $fields, &$result) use ($expr) {
-                            $result[$key] = $this->evaluate($expr, $fields);
-                        };
-                    }
-                    elseif ($colon && !$backq) {
-                        list($key, $expr) = array_map('trim', explode(':', $key, 2));
-                        $mapper[$key] = function ($key, $fields, &$result) use ($expr) {
-                            $result[$key] = $expr;
-                        };
-                    }
-                    elseif ($atmark && !$backq) {
-                        list($key, $expr) = array_map('trim', explode('@', $key, 2));
-                        $expr = "$expr(\$$key)";
-                        $mapper[$key] = function ($key, $fields, &$result) use ($expr) {
-                            $result[$key] = $this->evaluate($expr, $fields);
-                        };
-                    }
-                    elseif ($backq) {
-                        $mapper[trim($key, '`')] = function ($key, $fields, &$result) {
-                            $result[$key] = $this->evaluate($key, $fields);
-                        };
-                    }
-                    elseif ($key === '*') {
-                        $mapper[$key] = function ($key, $fields, &$result) {
-                            $result = array_replace($result, $fields);
-                        };
-                    }
-                    elseif ($key[0] === '~') {
-                        $mapper[ltrim($key, '~')] = function ($key, $fields, &$result) {
-                            unset($result[$key]);
-                        };
-                    }
-                    else {
-                        $mapper[$key] = function ($key, $fields, &$result) {
-                            $result[$key] = $fields[$key];
-                        };
-                    }
-                }
-                return $mapper;
-            })();
-
-        foreach ($this->cache['mapper'] as $key => $mapper) {
-            $mapper($key, $fields, $result);
+        foreach ($this->cache['column'] as $column => $mapper) {
+            if ($mapper === null) {
+                $result[$column] = $fields[$column];
+            }
+            elseif ($mapper instanceof \Closure) {
+                $result[$column] = $mapper($fields);
+            }
+            else {
+                $result[$column] = $mapper;
+            }
         }
 
         return $result;
@@ -353,7 +348,7 @@ EOT
             return true;
         }
 
-        return $this->evaluate($this->cache['where'], $fields);
+        return $this->evaluate($this->cache['where'])($fields);
     }
 
     private function whereBelow($fields)
@@ -364,7 +359,7 @@ EOT
             return true;
         }
 
-        return $this->evaluate($this->cache['below-where'], $fields);
+        return $this->evaluate($this->cache['below-where'])($fields);
     }
 
     private function orderBy(&$buffer, $allindex)
@@ -380,7 +375,7 @@ EOT
                             trim($col, '`'),
                             $ord,
                             function ($col, $fields) {
-                                return $this->evaluate($col, $fields);
+                                return $this->evaluate($col)($fields);
                             }
                         ];
                     }
@@ -433,12 +428,11 @@ EOT
         return $count < $this->cache['limit'];
     }
 
-    private function evaluate($expression, $fields)
+    private function evaluate($expression)
     {
-        $callee = eval_func("(function () {
+        return eval_func("(function () {
             extract(func_get_arg(0));
             return $expression;
         })(\$vars)", 'vars');
-        return $callee($fields);
     }
 }

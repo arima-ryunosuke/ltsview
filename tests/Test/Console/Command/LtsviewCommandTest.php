@@ -451,10 +451,22 @@ colA:345	colC:fu ga yo7
             '--nocomment' => false,
             '--format'    => 'tsv',
         ]);
-        $this->assertEquals("
+        $this->assertEquals("colA	colB	colC
 123	aaa	ho ge ra1
 456	bbb	ho ge ra2
 789	ccc	ho ge ra3
+", $result);
+
+        $result = $this->runApp([
+            'from'        => [__DIR__ . '/_files/log1.ltsv'],
+            '--select'    => '~colB',
+            '--nocomment' => false,
+            '--format'    => 'tsv',
+        ]);
+        $this->assertEquals("colA	colC
+123	ho ge ra1
+456	ho ge ra2
+789	ho ge ra3
 ", $result);
     }
 
