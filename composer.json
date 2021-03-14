@@ -1,7 +1,7 @@
 {
   "config": {
     "platform": {
-      "php": "7.1"
+      "php": "7.2"
     }
   },
   "name": "ryunosuke/ltsview",
@@ -15,8 +15,8 @@
     }
   ],
   "require": {
-    "php": ">=7.1",
-    "ryunosuke/functions": "1.2.*",
+    "php": ">=7.2",
+    "ryunosuke/functions": "1.4.*",
     "symfony/console": "*",
     "symfony/yaml": "*",
     "phpseclib/phpseclib": "2.*"
@@ -43,8 +43,12 @@
   "scripts": {
     "build": [
       "@composer install",
+      "@composer export",
       "@composer test",
       "@composer box"
+    ],
+    "export": [
+      "exclude-internal"
     ],
     "test": [
       "vendor/bin/phpunit --configuration=tests/phpunit.xml"
@@ -53,6 +57,12 @@
       "@composer dump-autoload --no-dev",
       "bin/box.phar build -c box.json",
       "@composer dump-autoload"
+    ],
+    "post-install-cmd": [
+      "@export"
+    ],
+    "post-update-cmd": [
+      "@export"
     ]
   }
 }

@@ -1,6 +1,5 @@
 {
   "compression": "GZ",
-  "chmod": "0755",
   "files": [
     "vendor/autoload.php",
     "vendor/ryunosuke/functions/include/global.php"
@@ -23,6 +22,9 @@
         "vendor/symfony/console",
         "vendor/symfony/polyfill-ctype",
         "vendor/symfony/polyfill-mbstring",
+        "vendor/symfony/polyfill-php73",
+        "vendor/symfony/polyfill-php80",
+        "vendor/symfony/service-contracts",
         "vendor/symfony/yaml",
         "vendor/phpseclib"
       ]
