@@ -114,9 +114,13 @@ EOT
         }
 
         Sftp::register();
-        ini_set('error_reporting', $this->input->getOption('noerror') ? 0 : E_ALL);
+        $restore = ini_sets([
+            'error_reporting' => $this->input->getOption('noerror') ? 0 : E_ALL,
+            'display_errors'  => 'stderr',
+            'log_errors'      => 0,
+        ]);
         $result = $this->main();
-        ini_restore('error_reporting');
+        $restore();
         return $result;
     }
 
