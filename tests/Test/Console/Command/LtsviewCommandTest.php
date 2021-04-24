@@ -537,9 +537,9 @@ colA:345	colC:fu ga yo7
             '--nocomment' => false,
             '--format'    => 'yaml',
         ]);
-        $this->assertContains("--- # $fname:1", $result);
-        $this->assertContains("--- # $fname:2", $result);
-        $this->assertContains("--- # $fname:3", $result);
+        $this->assertContains("# $fname:1", $result);
+        $this->assertContains("# $fname:2", $result);
+        $this->assertContains("# $fname:3", $result);
 
         $result = $this->runApp([
             'from'        => [$fname],
@@ -548,8 +548,8 @@ colA:345	colC:fu ga yo7
             '--offset'    => 1,
             '--limit'     => 2,
         ]);
-        $this->assertContains("--- # $fname:2", $result);
-        $this->assertContains("--- # $fname:3", $result);
+        $this->assertContains("# $fname:2", $result);
+        $this->assertContains("# $fname:3", $result);
 
         $result = $this->runApp([
             'from'          => [$fname],
@@ -561,11 +561,11 @@ colA:345	colC:fu ga yo7
             '--below-where' => '$colB == "k"',
             '--order-by'    => 'colC',
         ]);
-        $this->assertContains("--- # $fname:1", $result);
-        $this->assertContains("--- # $fname:4", $result);
-        $this->assertContains("--- # $fname:6", $result);
-        $this->assertContains("--- # $fname:10", $result);
-        $this->assertContains("--- # $fname:15", $result);
-        $this->assertContains("--- # $fname:16", $result);
+        $this->assertContains("# $fname:1", $result);
+        $this->assertContains("# $fname:4", $result);
+        $this->assertContains("# $fname:6", $result);
+        $this->assertContains("# $fname:10", $result);
+        $this->assertContains("# $fname:15", $result);
+        $this->assertContains("# $fname:16", $result);
     }
 }

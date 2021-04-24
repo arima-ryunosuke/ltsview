@@ -8,11 +8,9 @@ class Yaml extends AbstractType
 
     public function meta($file, $n)
     {
-        $result = "---";
         if ($this->comment_mode) {
-            $result .= " # $file:$n";
+            return $this->colorComment("# $file:$n\n");
         }
-        return $this->colorComment("$result\n");
     }
 
     public function body($fields)
@@ -24,7 +22,7 @@ class Yaml extends AbstractType
                 $hvalue = $this->colorValue(\Symfony\Component\Yaml\Yaml::dump($value));
                 $result[] = "$hlabel: $hvalue";
             }
-            return "{" . implode(",", $result) . "}\n";
+            return "- {" . implode(",", $result) . "}\n";
         }
         else {
             $result = [];
@@ -33,7 +31,7 @@ class Yaml extends AbstractType
                 $hvalue = $this->colorValue(\Symfony\Component\Yaml\Yaml::dump($value));
                 $result[] = "$hlabel: $hvalue";
             }
-            return implode("\n", $result) . "\n";
+            return "- " . implode("\n  ", $result) . "\n";
         }
     }
 

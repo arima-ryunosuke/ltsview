@@ -10,7 +10,7 @@ class YamlTest extends AbstractTestCase
 
         $this->decoder = function ($string) {
             // symfony yaml: multiple documents are not supported
-            return yaml_parse($string, -1);
+            return \Symfony\Component\Yaml\Yaml::parse($string);
         };
     }
 
@@ -40,6 +40,6 @@ class YamlTest extends AbstractTestCase
         $fields = ['a' => 'A', 'b' => 'B', 'c' => 'C'];
         $buffer = $type->body($fields);
         $this->assertEquals([$fields], ($this->decoder)($buffer, "Actual:\n$buffer"));
-        $this->assertEquals("{a: A,b: B,c: C}\n", $buffer, "Actual:\n$buffer");
+        $this->assertEquals("- {a: A,b: B,c: C}\n", $buffer, "Actual:\n$buffer");
     }
 }
