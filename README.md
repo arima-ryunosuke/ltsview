@@ -58,7 +58,7 @@ Options:
   -o, --offset=OFFSET            Specify skip count.
   -l, --limit=LIMIT              Specify take count.
   -r, --require=REQUIRE          Specify require file.php.
-  -f, --format=FORMAT            Specify output format[yaml|json|ltsv|tsv|md|php]. [default: "yaml"]
+  -f, --format=FORMAT            Specify output format[yaml|json|jsonl|ltsv|tsv|md|php]. [default: "yaml"]
   -b, --below=BELOW              Specify count below the matched where (keeping original order).
   -W, --below-where=BELOW-WHERE  Specify below filter statement.
       --compact                  Switch compact output.

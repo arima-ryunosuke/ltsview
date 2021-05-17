@@ -20,6 +20,17 @@
 
 - 選択ソートを使えばソート中の出力が行えるかも？
 
+## 1.0.6
+
+- [change] command information
+- [feature] groupBy を実装
+- [refactor] evaluate のシンプル化
+- [feature] gz/bz2 に対応
+- [feature] jsonl を追加
+- [fixbug] json+compact+comment で無駄な空白があったので削除
+- [change] yaml がパースできない環境があるのでドキュメント形式はやめてリスト形式に変更
+- [change] エラーは stderr とし、php のログには出さない
+
 ## 1.0.5
 
 - [fixbug] select した列でしか order-by できない不具合を修正
