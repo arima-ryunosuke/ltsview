@@ -36,7 +36,7 @@ class Json extends AbstractType
         if ($this->compact_mode) {
             $result = [];
             if ($this->meta) {
-                $result[] = $this->colorComment('"//": ' . json_encode($this->meta, $jopt)) . ($fields ? "," : "");
+                $result[] = $this->colorComment('"//":' . json_encode($this->meta, $jopt)) . ($fields ? "," : "");
             }
             foreach ($fields as $label => $value) {
                 $hlabel = $this->colorLabel(json_encode($label, $jopt));
