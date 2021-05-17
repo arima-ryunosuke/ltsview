@@ -15,6 +15,9 @@ abstract class AbstractType
                 throw new \InvalidArgumentException("$type type is not supported.");
             case 'json':
                 return new Json($option);
+            case 'jsonline':
+            case 'jsonl':
+                return new JsonLine($option);
             case 'ltsv':
                 return new Ltsv($option);
             case 'php':
