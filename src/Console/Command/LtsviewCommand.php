@@ -405,24 +405,34 @@ EOT
 
     private function where($fields)
     {
-        $this->cache['where'] = $this->cache['where'] ?? $this->input->getOption('where');
+        $this->cache['where'] = $this->cache['where'] ?? (function () {
+                if ($this->input->getOption('where') !== null) {
+                    return $this->evaluate($this->input->getOption('where'));
+                }
+                return false;
+            })();
 
-        if ($this->cache['where'] === null) {
+        if ($this->cache['where'] === false) {
             return true;
         }
 
-        return $this->evaluate($this->cache['where'])($fields);
+        return $this->cache['where']($fields);
     }
 
     private function whereBelow($fields)
     {
-        $this->cache['below-where'] = $this->cache['below-where'] ?? $this->input->getOption('below-where');
+        $this->cache['below-where'] = $this->cache['below-where'] ?? (function () {
+                if ($this->input->getOption('below-where') !== null) {
+                    return $this->evaluate($this->input->getOption('below-where'));
+                }
+                return false;
+            })();
 
-        if ($this->cache['below-where'] === null) {
+        if ($this->cache['below-where'] === false) {
             return true;
         }
 
-        return $this->evaluate($this->cache['below-where'])($fields);
+        return $this->cache['below-where']($fields);
     }
 
     private function orderBy(&$buffer, $allindex)
@@ -497,9 +507,9 @@ EOT
 
     private function evaluate($expression)
     {
-        return eval_func("(function () {
+        return evaluate("return static function() {
             extract(func_get_arg(0));
             return $expression;
-        })(\$vars)", 'vars');
+        };");
     }
 }
