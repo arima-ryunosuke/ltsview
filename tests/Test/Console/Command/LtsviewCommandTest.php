@@ -77,6 +77,18 @@ colA:345	colC:fu ga yo7
         ], eval("return $result;"), "Actual:\n$result");
     }
 
+    function test_from_gz()
+    {
+        $result = $this->runApp([
+            'from' => __DIR__ . '/_files/log.ltsv.gz',
+        ]);
+        $this->assertEquals([
+            ['colB' => 'aaa', 'colA' => '123', 'colC' => 'ho ge ra1',],
+            ['colB' => 'bbb', 'colA' => '456', 'colC' => 'ho ge ra2',],
+            ['colB' => 'ccc', 'colA' => '789', 'colC' => 'ho ge ra3',],
+        ], eval("return $result;"), "Actual:\n$result");
+    }
+
     function test_from_glob()
     {
         $expected = $this->runApp([

@@ -17,6 +17,11 @@ class LtsviewCommand extends Command
 
     private static $STDIN = STDIN;
 
+    private static $EXTRACT_SCHEME = [
+        'gz'  => 'compress.zlib://',
+        'bz2' => 'compress.bzip2://',
+    ];
+
     /** @var InputInterface */
     private $input;
 
@@ -248,17 +253,25 @@ EOT
         // shoddy emulation glob (https://www.php.net/manual/function.glob.php)
         $froms = [];
         foreach ((array) ($this->input->getArgument('from') ?: '-') as $from) {
+            $pathinfo = pathinfo($from);
+            $scheme = self::$EXTRACT_SCHEME[$pathinfo['extension'] ?? null] ?? '';
+
             if ($from === '-' || file_exists($from)) {
-                $froms[] = $from;
+                $froms[] = [
+                    'scheme' => $scheme,
+                    'path'   => $from,
+                ];
             }
             else {
-                $pathinfo = pathinfo($from);
                 foreach (scandir($pathinfo['dirname'], SCANDIR_SORT_NONE) as $entry) {
                     if ($entry === '.' || $entry === '..') {
                         continue;
                     }
                     if (fnmatch($pathinfo['basename'], $entry)) {
-                        $froms[] = $pathinfo['dirname'] . DIRECTORY_SEPARATOR . $entry;
+                        $froms[] = [
+                            'scheme' => $scheme,
+                            'path'   => $pathinfo['dirname'] . DIRECTORY_SEPARATOR . $entry,
+                        ];
                     }
                 }
             }
@@ -270,7 +283,7 @@ EOT
         }
         $seq = 0;
         foreach ($froms as $from) {
-            $handle = $from === '-' ? self::$STDIN : fopen($from, 'r');
+            $handle = $from['path'] === '-' ? self::$STDIN : fopen($from['scheme'] . $from['path'], 'r');
             $n = 0;
             while (($line = fgets($handle)) !== false) {
                 $n++;
@@ -293,7 +306,7 @@ EOT
                     if ($seq === 0) {
                         yield array_keys($ltsv);
                     }
-                    yield [$seq++, $from, $n, $ltsv];
+                    yield [$seq++, $from['path'], $n, $ltsv];
                 }
             }
         }
