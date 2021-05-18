@@ -474,6 +474,38 @@ colA:345	colC:fu ga yo7
         ], eval("return $result;"), "Actual:\n$result");
     }
 
+    function test_group_by()
+    {
+        $result = $this->runApp([
+            'from'       => [__DIR__ . '/_files/log*.ltsv'],
+            '--select'   => 'colX:`$colB[0]`',
+            '--group-by' => 'colX, countA:`count($colA)`, minA:`min($colA)`',
+        ]);
+        $this->assertEquals([
+            ['colX' => 'a', 'countA' => 3, 'minA' => '1'],
+            ['colX' => 'b', 'countA' => 6, 'minA' => '4'],
+            ['colX' => 'c', 'countA' => 2, 'minA' => '7'],
+            ['colX' => 'A', 'countA' => 1, 'minA' => '123'],
+            ['colX' => 'B', 'countA' => 2, 'minA' => '456'],
+            ['colX' => 'C', 'countA' => 1, 'minA' => '789'],
+            ['colX' => 'D', 'countA' => 1, 'minA' => '234'],
+            ['colX' => 'E', 'countA' => 1, 'minA' => '567'],
+            ['colX' => 'F', 'countA' => 1, 'minA' => '890'],
+            ['colX' => 'G', 'countA' => 1, 'minA' => '345'],
+            ['colX' => 'H', 'countA' => 1, 'minA' => '678'],
+            ['colX' => 'I', 'countA' => 1, 'minA' => '901'],
+            ['colX' => 'J', 'countA' => 1, 'minA' => '999'],
+            ['colX' => 'd', 'countA' => 1, 'minA' => '8'],
+            ['colX' => 'k', 'countA' => 2, 'minA' => '3'],
+            ['colX' => 'g', 'countA' => 1, 'minA' => '1'],
+            ['colX' => 'f', 'countA' => 2, 'minA' => '5'],
+            ['colX' => 'e', 'countA' => 2, 'minA' => '7'],
+            ['colX' => 'h', 'countA' => 2, 'minA' => '2'],
+            ['colX' => 'i', 'countA' => 2, 'minA' => '9'],
+            ['colX' => 'j', 'countA' => 1, 'minA' => '6'],
+        ], eval("return $result;"), "Actual:\n$result");
+    }
+
     function test_offsetAndLimit()
     {
         $result = $this->runApp([

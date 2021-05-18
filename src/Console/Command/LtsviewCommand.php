@@ -70,6 +70,9 @@ class LtsviewCommand extends Command
                 - e.g. order colti column:   --order-by '-colA, colB'
                 - e.g. order php expression: --order-by '`\$colA + \$colB`'
             "),
+            new InputOption('group-by', 'g', InputOption::VALUE_REQUIRED, "Specify group column and aggregate column. Grouping will be executed after all finished.
+                - e.g. group colA: --group-by 'colA, countB:`count(\$colB)`, minC:`min(\$colC)`'
+            "),
             new InputOption('offset', 'o', InputOption::VALUE_REQUIRED, "Specify skip count."),
             new InputOption('limit', 'l', InputOption::VALUE_REQUIRED, "Specify take count."),
             new InputOption('require', 'r', InputOption::VALUE_REQUIRED, "Specify require file.php."),
@@ -148,8 +151,8 @@ EOT
 
         $this->output->write($type->head(array_keys($this->column($header))));
 
-        // distinct/orderBy requires buffering
-        if ($this->input->hasParameterOption('--distinct') || $this->input->hasParameterOption('--order-by')) {
+        // distinct/orderBy/groupBy requires buffering
+        if ($this->input->hasParameterOption('--distinct') || $this->input->hasParameterOption('--order-by') || $this->input->hasParameterOption('--group-by')) {
             $buffer = [];
             $lastindex = -1;
             while ($from->valid()) {
@@ -184,6 +187,7 @@ EOT
             }
 
             $this->orderBy($buffer, 4);
+            $this->groupBy($buffer, 3, 4);
 
             $index = $count = 0;
             foreach ($buffer as $it) {
@@ -325,28 +329,12 @@ EOT
                 $column = [];
                 $ignore = [];
                 foreach (quoteexplode(',', $this->input->getOption('select'), '`') as $select) {
-                    $select = trim($select);
-                    if (!strlen($select)) {
+                    $select = $this->expression($select);
+                    if ($select === null) {
                         continue;
                     }
-                    $colon = strpos($select, ':') !== false;
-                    $atmark = strpos($select, '@') !== false;
-                    $backq = strpos($select, '`') !== false;
-                    if ($colon && !$backq) {
-                        list($select, $expr) = array_map('trim', explode(':', $select, 2));
-                        $column[$select] = $expr;
-                    }
-                    elseif ($colon && $backq) {
-                        list($select, $expr) = array_map('trim', explode(':', $select, 2));
-                        $column[$select] = $this->evaluate(trim($expr, '`'));
-                    }
-                    elseif ($atmark && !$backq) {
-                        list($select, $expr) = array_map('trim', explode('@', $select, 2));
-                        $column[$select] = $this->evaluate("$expr(\$$select)");
-                    }
-                    elseif ($backq) {
-                        $select = trim($select, '`');
-                        $column[$select] = $this->evaluate($select);
+                    if (is_array($select)) {
+                        $column = $select + $column;
                     }
                     elseif ($select === '*') {
                         $column = array_fill_keys($header, null);
@@ -483,6 +471,52 @@ EOT
         });
     }
 
+    private function groupBy(&$buffer, $colindex, $allindex)
+    {
+        if (!$this->input->hasParameterOption('--group-by')) {
+            return;
+        }
+
+        $this->cache['group-by'] = $this->cache['group-by'] ?? (function () {
+                $group = [
+                    'key' => [],
+                    'val' => [],
+                ];
+                foreach (quoteexplode(',', $this->input->getOption('group-by'), '`') as $col) {
+                    $col = $this->expression($col);
+                    if (is_array($col)) {
+                        $group['val'] = $col + $group['val'];
+                    }
+                    elseif (is_string($col)) {
+                        $group['key'][$col] = null;
+                    }
+                }
+                return $group;
+            })();
+
+        $groups = [];
+        foreach ($buffer as $line) {
+            $key = serialize(array_intersect_key($line[$allindex], $this->cache['group-by']['key']));
+            $groups[$key][] = $line;
+        }
+
+        $buffer = [];
+        foreach ($groups as $lines) {
+            $line = reset($lines);
+
+            $values = array_column($lines, $allindex);
+            $fields = [];
+            foreach ($line[$allindex] as $c => $v) {
+                $fields[$c] = array_column($values, $c);
+            }
+
+            foreach ($this->cache['group-by']['val'] as $col => $val) {
+                $line[$colindex][$col] = $val($fields);
+            }
+            $buffer[] = $line;
+        }
+    }
+
     private function offset($index)
     {
         $this->cache['offset'] = $this->cache['offset'] ?? (int) $this->input->getOption('offset');
@@ -503,6 +537,36 @@ EOT
         }
 
         return $count < $this->cache['limit'];
+    }
+
+    private function expression($expression)
+    {
+        $expression = trim($expression);
+        if (!strlen($expression)) {
+            return null;
+        }
+        $colon = strpos($expression, ':') !== false;
+        $atmark = strpos($expression, '@') !== false;
+        $backq = strpos($expression, '`') !== false;
+        if ($colon && !$backq) {
+            [$expression, $expr] = array_map('trim', explode(':', $expression, 2));
+            return [$expression => $expr];
+        }
+        elseif ($colon && $backq) {
+            [$expression, $expr] = array_map('trim', explode(':', $expression, 2));
+            return [$expression => $this->evaluate(trim($expr, '`'))];
+        }
+        elseif ($atmark && !$backq) {
+            [$expression, $expr] = array_map('trim', explode('@', $expression, 2));
+            return [$expression => $this->evaluate("$expr(\$$expression)")];
+        }
+        elseif ($backq) {
+            $expression = trim($expression, '`');
+            return [$expression => $this->evaluate($expression)];
+        }
+        else {
+            return $expression;
+        }
     }
 
     private function evaluate($expression)
