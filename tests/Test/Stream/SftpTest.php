@@ -95,7 +95,7 @@ CONFIG
 
         $config = $sftp->_resolve_host(['host' => 'unknown'], $sshconfig);
         $this->assertEquals([
-            'host' => 'unknown'
+            'host' => 'unknown',
         ], $config);
 
         $config = $sftp->_resolve_host(['host' => 'hoge-fuga-piyo'], $sshconfig);

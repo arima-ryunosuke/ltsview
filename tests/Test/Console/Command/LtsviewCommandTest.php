@@ -470,7 +470,7 @@ colA:345	colC:fu ga yo7
             '--limit'  => 1,
         ]);
         $this->assertEquals([
-            ['colA' => '456', 'colB' => 'bbb', 'colC' => 'ho ge ra2',]
+            ['colA' => '456', 'colB' => 'bbb', 'colC' => 'ho ge ra2',],
         ], eval("return $result;"), "Actual:\n$result");
     }
 

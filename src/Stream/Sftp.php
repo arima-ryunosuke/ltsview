@@ -73,7 +73,7 @@ class Sftp extends \phpseclib\Net\SFTP\Stream
             if (($entry[0] ?? '') === '#') {
                 continue;
             }
-            list($key, $value) = explode(' ', $entry, 2) + [1 => null];
+            [$key, $value] = explode(' ', $entry, 2) + [1 => null];
             $key = strtolower(trim($key));
             $value = trim($value);
             if ($key === 'host') {

@@ -144,7 +144,7 @@ EOT
             $buffer = [];
             $lastindex = -1;
             while ($from->valid()) {
-                list($seq, $fname, $n, $fields) = $from->current();
+                [$seq, $fname, $n, $fields] = $from->current();
                 $from->next();
 
                 $columns = $this->select($fields);
@@ -178,7 +178,7 @@ EOT
 
             $index = $count = 0;
             foreach ($buffer as $it) {
-                list(, $fname, $n, $columns, , $children) = $it;
+                [, $fname, $n, $columns, , $children] = $it;
 
                 if (!$this->offset(++$index)) {
                     continue;
@@ -191,7 +191,7 @@ EOT
                     if (!$this->limit(++$count)) {
                         break 2;
                     }
-                    list(, $fname, $n, $columns) = $child;
+                    [, $fname, $n, $columns] = $child;
                     $this->output->write($type->meta($fname, $n));
                     $this->output->write($type->body($columns));
                 }
@@ -205,7 +205,7 @@ EOT
             $lastindex = -1;
             $index = $count = 0;
             while ($from->valid()) {
-                list($seq, $fname, $n, $fields) = $from->current();
+                [$seq, $fname, $n, $fields] = $from->current();
                 $from->next();
 
                 $columns = $this->select($fields);
@@ -426,7 +426,7 @@ EOT
                             $ord,
                             function ($col, $fields) {
                                 return $this->evaluate($col)($fields);
-                            }
+                            },
                         ];
                     }
                     else {
@@ -438,7 +438,7 @@ EOT
 
         usort($buffer, function ($a, $b) use ($allindex) {
             foreach ($this->cache['order-by'] as $orderBy) {
-                list($key, $ord, $expr) = $orderBy;
+                [$key, $ord, $expr] = $orderBy;
                 if ($expr) {
                     $delta = $expr($key, $a[$allindex]) <=> $expr($key, $b[$allindex]);
                 }

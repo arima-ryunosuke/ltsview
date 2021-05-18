@@ -34,7 +34,7 @@ abstract class AbstractTestCase extends \ryunosuke\test\AbstractTestCase
     protected function runApp($inputArray)
     {
         $inputArray = [
-                'command' => $this->commandName
+                'command' => $this->commandName,
             ] + $inputArray + $this->defaultArgs;
 
         $input = new ArrayInput($inputArray);
