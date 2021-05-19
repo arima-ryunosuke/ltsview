@@ -13,7 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class LtsviewCommand extends Command
 {
     public const NAME    = 'ltsview';
-    public const VERSION = '1.0.5';
+    public const VERSION = '1.0.6';
 
     private static $STDIN = STDIN;
 
@@ -35,6 +35,7 @@ class LtsviewCommand extends Command
      */
     protected function configure()
     {
+        $bufferingMode = "<comment>This option forces buffering mode.</comment>";
         $this->setName(self::NAME)->setDescription('pretty view ltsv format.');
         $this->setDefinition([
             new InputArgument('from', InputArgument::OPTIONAL | InputArgument::IS_ARRAY, "Specify input file. '-' means STDIN. and support stream wrapper.
@@ -49,7 +50,7 @@ class LtsviewCommand extends Command
                 - e.g. combined log: --regex '/^(?<host>.*?) (.*?) (.*?) \[(?<time>.*?)\] \"(?<request>.*?)\" (?<status>.*?) (?<size>.*?) \"(?<referer>.*?)\" \"(?<uagent>.*?)\"$/'
                 - e.g. preset file:  --regex ./combined.txt
             "),
-            new InputOption('distinct', 'd', InputOption::VALUE_OPTIONAL, "Specify distinct column.
+            new InputOption('distinct', 'd', InputOption::VALUE_OPTIONAL, "Specify distinct column. $bufferingMode
                 - e.g. distinct all:    --distinct
                 - e.g. distinct column: --distinct 'colC'
             "),
@@ -65,18 +66,18 @@ class LtsviewCommand extends Command
                 - e.g. filter match string: --where '\$colA == \"word\"'
                 - e.g. filter php function: --where 'ctype_digit(\$colA)'
             "),
-            new InputOption('order-by', 't', InputOption::VALUE_REQUIRED, "Specify order column (+/- prefix means ASC/DESC). Can use all php functions and use virtual column.
+            new InputOption('order-by', 't', InputOption::VALUE_REQUIRED, "Specify order column (+/- prefix means ASC/DESC). Can use all php functions and use virtual column. $bufferingMode
                 - e.g. order DESC column:    --order-by '-colA'
-                - e.g. order colti column:   --order-by '-colA, colB'
+                - e.g. order multi column:   --order-by '-colA, colB'
                 - e.g. order php expression: --order-by '`\$colA + \$colB`'
             "),
-            new InputOption('group-by', 'g', InputOption::VALUE_REQUIRED, "Specify group column and aggregate column. Grouping will be executed after all finished.
+            new InputOption('group-by', 'g', InputOption::VALUE_REQUIRED, "Specify group column and aggregate column. Grouping will be executed after all finished. $bufferingMode
                 - e.g. group colA: --group-by 'colA, countB:`count(\$colB)`, minC:`min(\$colC)`'
             "),
             new InputOption('offset', 'o', InputOption::VALUE_REQUIRED, "Specify skip count."),
             new InputOption('limit', 'l', InputOption::VALUE_REQUIRED, "Specify take count."),
             new InputOption('require', 'r', InputOption::VALUE_REQUIRED, "Specify require file.php."),
-            new InputOption('format', 'f', InputOption::VALUE_REQUIRED, "Specify output format[yaml|json|ltsv|tsv|md|php].", 'yaml'),
+            new InputOption('format', 'f', InputOption::VALUE_REQUIRED, "Specify output format[yaml|json|json|ltsv|tsv|md|php].", 'yaml'),
             new InputOption('below', 'b', InputOption::VALUE_REQUIRED, "Specify count below the matched where (keeping original order)."),
             new InputOption('below-where', 'W', InputOption::VALUE_REQUIRED, "Specify below filter statement."),
             new InputOption('compact', null, InputOption::VALUE_NONE, "Switch compact output."),
