@@ -17,7 +17,7 @@ abstract class AbstractTestCase extends \ryunosuke\test\AbstractTestCase
 
     protected $defaultArgs = [];
 
-    protected function setup()
+    protected function setup(): void
     {
         parent::setUp();
 

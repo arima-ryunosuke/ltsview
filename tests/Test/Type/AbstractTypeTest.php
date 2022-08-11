@@ -30,18 +30,18 @@ class AbstractTypeTest extends \ryunosuke\test\AbstractTestCase
             'compact' => false,
             'color'   => false,
         ]);
-        $this->assertNotContains("<fg", $mock->colorComment('hoge'));
-        $this->assertNotContains("<fg", $mock->colorLabel('hoge'));
-        $this->assertNotContains("<fg", $mock->colorValue('hoge'));
+        $this->assertStringNotContainsString("<fg", $mock->colorComment('hoge'));
+        $this->assertStringNotContainsString("<fg", $mock->colorLabel('hoge'));
+        $this->assertStringNotContainsString("<fg", $mock->colorValue('hoge'));
 
         $mock = new Mock([
             'comment' => false,
             'compact' => false,
             'color'   => true,
         ]);
-        $this->assertContains("<fg", $mock->colorComment('hoge'));
-        $this->assertContains("<fg", $mock->colorLabel('hoge'));
-        $this->assertContains("<fg", $mock->colorValue('hoge'));
+        $this->assertStringContainsString("<fg", $mock->colorComment('hoge'));
+        $this->assertStringContainsString("<fg", $mock->colorLabel('hoge'));
+        $this->assertStringContainsString("<fg", $mock->colorValue('hoge'));
     }
 }
 

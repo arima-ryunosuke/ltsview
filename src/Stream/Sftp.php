@@ -4,58 +4,70 @@ namespace ryunosuke\ltsv\Stream;
 
 use ryunosuke\ltsv\Traits\User;
 
-/**
- * simplize \phpseclib\Net\SFTP\Stream
- *
- * - delete query and fragment
- * - delete context
- * - delete global host
- * - delete notification
- */
-class Sftp extends \phpseclib\Net\SFTP\Stream
+class Sftp extends \phpseclib3\Net\SFTP\Stream
 {
     use User;
 
+    private static $contexts = [];
+
+    protected function parse_path($path)
+    {
+        $parts = $this->_parse_path($path);
+        $origin = sprintf('%s://%s:%s@%s:%d', $parts['scheme'], $parts['user'], $parts['pass'], $parts['host'], $parts['port']);
+        $this->context = self::$contexts[$origin] ??= stream_context_create([
+            $parts['scheme'] => [
+                'username' => $parts['user'] ?? null,
+                'password' => $parts['key'] ?? $parts['pass'] ?? null,
+                'privkey'  => $parts['key'] ?? null,
+            ],
+        ]);
+        return parent::parse_path(build_uri($parts));
+    }
+
     function _parse_path($path)
     {
+        // original parsed
         $parts = parse_uri($path, [
-            'user' => $this->getUser()['name'],
+            'user' => '',
             'pass' => '',
-            'port' => 22,
         ]);
 
-        $cachekey = $parts['user'] . '@' . $parts['host'] . ':' . $parts['port'];
+        // combine ssh/config
+        $parts = $this->_resolve_host($parts, $this->_parse_config());
 
-        if (isset(static::$instances[$cachekey])) {
-            $this->sftp = static::$instances[$cachekey];
+        // user is empty -> Current user
+        if ($parts['user'] === '') {
+            $parts['user'] = $this->getUser()['name'];
         }
-        else {
-            $parts = $this->_resolve_host($parts, $this->_parse_config());
 
-            $this->sftp = new \phpseclib\Net\SFTP($parts['host'], $parts['port']);
-            $this->sftp->disableStatCache();
-
-            // for stdin
+        if (!isset($parts['key'])) {
+            // pass is empty -> Agent
             if ($parts['pass'] === '') {
-                $ret = $this->sftp->login($parts['user'], new \phpseclib\System\SSH\Agent());
-            }
-            // for interactive
-            elseif ($parts['pass'] === '-') {
-                // @helpme not work _keyboard_interactive_login
-                $ret = $this->sftp->login($parts['user'], ['Password' => null]);
-            }
-            // for password auth
-            else {
-                $ret = $this->sftp->login($parts['user'], $parts['pass']);
-            }
-            if (!$ret) {
-                return false;
-            }
+                $parts['key'] = new class() extends \phpseclib3\System\SSH\Agent {
+                    public function __construct($address = null)
+                    {
+                        if (!($_SERVER['unittest'] ?? false)) {
+                            parent::__construct($address); // @codeCoverageIgnore
+                        }
+                    }
 
-            static::$instances[$cachekey] = $this->sftp;
+                    // @see phpseclib/Net/SFTP/Stream.php#216 stringify for sftp caches
+                    public function __toString()
+                    {
+                        return \phpseclib3\System\SSH\Agent::class . '#' . spl_object_id($this);
+                    }
+                };
+            }
+            // pass is hyphen -> Keyboard-Interactive
+            elseif ($parts['pass'] === '-') {
+                // @see https://phpseclib.com/docs/auth helpme not work _keyboard_interactive_login
+                $parts['key'] = [
+                    ['Password' => $parts['pass']],
+                ];
+            }
         }
 
-        return $parts['path'];
+        return $parts;
     }
 
     function _parse_config($filename = null)
@@ -105,9 +117,9 @@ class Sftp extends \phpseclib\Net\SFTP\Stream
                     $overridden['user'] = $config['user'];
                 }
                 if (isset($config['identityfile'])) {
-                    $key = new \phpseclib\Crypt\RSA();
-                    $key->loadKey(file_get_contents($this->resolveHome($config['identityfile'])));
-                    $overridden['pass'] = $key;
+                    $privatekey = file_get_contents($this->resolveHome($config['identityfile']));
+                    $passphrase = strlen($original['pass'] ?? '') ? $original['pass'] : false;
+                    $overridden['key'] = \phpseclib3\Crypt\PublicKeyLoader::load($privatekey, $passphrase);
                 }
                 return $overridden + $original;
             }

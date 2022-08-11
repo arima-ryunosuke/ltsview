@@ -20,7 +20,7 @@ abstract class AbstractTestCase extends \ryunosuke\test\AbstractTestCase
         return AbstractType::instance(strtolower($name), $option);
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
 

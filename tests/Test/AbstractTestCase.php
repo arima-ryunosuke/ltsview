@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 abstract class AbstractTestCase extends TestCase
 {
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
     }
@@ -34,7 +34,7 @@ abstract class AbstractTestCase extends TestCase
             self::assertInstanceOf(get_class($e), $ex);
             self::assertEquals($e->getCode(), $ex->getCode());
             if (strlen($e->getMessage()) > 0) {
-                self::assertContains($e->getMessage(), $ex->getMessage());
+                self::assertStringContainsString($e->getMessage(), $ex->getMessage());
             }
             return;
         }

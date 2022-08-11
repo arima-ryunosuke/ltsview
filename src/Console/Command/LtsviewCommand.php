@@ -329,7 +329,7 @@ EOT
         $this->cache['column'] = $this->cache['column'] ?? (function ($header) {
                 $column = [];
                 $ignore = [];
-                foreach (quoteexplode(',', $this->input->getOption('select'), '`') as $select) {
+                foreach (quoteexplode(',', $this->input->getOption('select'), null, '`') as $select) {
                     $select = $this->expression($select);
                     if ($select === null) {
                         continue;
@@ -432,7 +432,7 @@ EOT
 
         $this->cache['order-by'] = $this->cache['order-by'] ?? (function () {
                 $orderBy = [];
-                foreach (quoteexplode(',', $this->input->getOption('order-by'), '`') as $col) {
+                foreach (quoteexplode(',', $this->input->getOption('order-by'), null, '`') as $col) {
                     $prefix = $col[0];
                     $col = ltrim($col, '+-');
                     $ord = ['+' => true, '-' => false][$prefix] ?? true;
@@ -483,7 +483,7 @@ EOT
                     'key' => [],
                     'val' => [],
                 ];
-                foreach (quoteexplode(',', $this->input->getOption('group-by'), '`') as $col) {
+                foreach (quoteexplode(',', $this->input->getOption('group-by'), null, '`') as $col) {
                     $col = $this->expression($col);
                     if (is_array($col)) {
                         $group['val'] = $col + $group['val'];

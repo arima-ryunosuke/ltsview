@@ -6,7 +6,7 @@ class JsonTest extends AbstractTestCase
 {
     protected $meta = false;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
 

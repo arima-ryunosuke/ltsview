@@ -20,7 +20,7 @@ class LtsviewCommandTest extends AbstractTestCase
 
     private $stdin;
 
-    protected function setup()
+    protected function setup(): void
     {
         parent::setUp();
 
@@ -34,7 +34,7 @@ class LtsviewCommandTest extends AbstractTestCase
         $this->app->add($this->command);
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         $ref = new \ReflectionClass($this->command);
         $stdin = $ref->getProperty('STDIN');
@@ -581,9 +581,9 @@ colA:345	colC:fu ga yo7
             '--nocomment' => false,
             '--format'    => 'yaml',
         ]);
-        $this->assertContains("# $fname:1", $result);
-        $this->assertContains("# $fname:2", $result);
-        $this->assertContains("# $fname:3", $result);
+        $this->assertStringContainsString("# $fname:1", $result);
+        $this->assertStringContainsString("# $fname:2", $result);
+        $this->assertStringContainsString("# $fname:3", $result);
 
         $result = $this->runApp([
             'from'        => [$fname],
@@ -592,8 +592,8 @@ colA:345	colC:fu ga yo7
             '--offset'    => 1,
             '--limit'     => 2,
         ]);
-        $this->assertContains("# $fname:2", $result);
-        $this->assertContains("# $fname:3", $result);
+        $this->assertStringContainsString("# $fname:2", $result);
+        $this->assertStringContainsString("# $fname:3", $result);
 
         $result = $this->runApp([
             'from'          => [$fname],
@@ -605,11 +605,11 @@ colA:345	colC:fu ga yo7
             '--below-where' => '$colB == "k"',
             '--order-by'    => 'colC',
         ]);
-        $this->assertContains("# $fname:1", $result);
-        $this->assertContains("# $fname:4", $result);
-        $this->assertContains("# $fname:6", $result);
-        $this->assertContains("# $fname:10", $result);
-        $this->assertContains("# $fname:15", $result);
-        $this->assertContains("# $fname:16", $result);
+        $this->assertStringContainsString("# $fname:1", $result);
+        $this->assertStringContainsString("# $fname:4", $result);
+        $this->assertStringContainsString("# $fname:6", $result);
+        $this->assertStringContainsString("# $fname:10", $result);
+        $this->assertStringContainsString("# $fname:15", $result);
+        $this->assertStringContainsString("# $fname:16", $result);
     }
 }
