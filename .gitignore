@@ -1,4 +1,4 @@
 /composer.lock
 /vendor
-/tests/coverage
 /tests/phpunit.xml
+/tests/.phpunit.result.cache
