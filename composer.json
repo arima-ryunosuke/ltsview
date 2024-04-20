@@ -16,7 +16,7 @@
   ],
   "require": {
     "php": ">=7.4",
-    "ryunosuke/functions": "1.5.*",
+    "ryunosuke/functions": "1.6.*",
     "symfony/console": "4.*",
     "symfony/yaml": "*",
     "phpseclib/phpseclib": "3.*"
