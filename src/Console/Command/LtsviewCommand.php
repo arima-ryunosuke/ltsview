@@ -331,29 +331,29 @@ EOT
         // pattern5: *
         // pattern6: ~ignorecolumn
         // pattern7: simplecolumn
-        $this->cache['column'] = $this->cache['column'] ?? (function ($header) {
-                $column = [];
-                $ignore = [];
-                foreach (quoteexplode(',', $this->input->getOption('select'), null, '`') as $select) {
-                    $select = $this->expression($select);
-                    if ($select === null) {
-                        continue;
-                    }
-                    if (is_array($select)) {
-                        $column = $select + $column;
-                    }
-                    elseif ($select === '*') {
-                        $column = array_fill_keys($header, null);
-                    }
-                    elseif ($select[0] === '~') {
-                        $ignore[ltrim($select, '~')] = true;
-                    }
-                    else {
-                        $column[$select] = null;
-                    }
+        $this->cache['column'] ??= (function ($header) {
+            $column = [];
+            $ignore = [];
+            foreach (quoteexplode(',', $this->input->getOption('select'), null, '`') as $select) {
+                $select = $this->expression($select);
+                if ($select === null) {
+                    continue;
                 }
-                return array_diff_key($column ?: array_fill_keys($header, null), $ignore);
-            })($header);
+                if (is_array($select)) {
+                    $column = $select + $column;
+                }
+                elseif ($select === '*') {
+                    $column = array_fill_keys($header, null);
+                }
+                elseif ($select[0] === '~') {
+                    $ignore[ltrim($select, '~')] = true;
+                }
+                else {
+                    $column[$select] = null;
+                }
+            }
+            return array_diff_key($column ?: array_fill_keys($header, null), $ignore);
+        })($header);
 
         return $this->cache['column'];
     }
@@ -383,10 +383,10 @@ EOT
             return true;
         }
 
-        $this->cache['distinct'] = $this->cache['distinct'] ?? array_fill_keys(
-                split_noempty(',', $this->input->getOption('distinct')) ?: array_keys($this->cache['column']), null
-            );
-        $this->cache['history'] = $this->cache['history'] ?? [];
+        $this->cache['distinct'] ??= array_fill_keys(
+            split_noempty(',', $this->input->getOption('distinct')) ?: array_keys($this->cache['column']), null
+        );
+        $this->cache['history'] ??= [];
 
         $key = serialize(array_intersect_key($fields, $this->cache['distinct']));
         if (isset($this->cache['history'][$key])) {
@@ -399,12 +399,12 @@ EOT
 
     private function where($fields)
     {
-        $this->cache['where'] = $this->cache['where'] ?? (function () {
-                if ($this->input->getOption('where') !== null) {
-                    return $this->evaluate($this->input->getOption('where'));
-                }
-                return false;
-            })();
+        $this->cache['where'] ??= (function () {
+            if ($this->input->getOption('where') !== null) {
+                return $this->evaluate($this->input->getOption('where'));
+            }
+            return false;
+        })();
 
         if ($this->cache['where'] === false) {
             return true;
@@ -415,12 +415,12 @@ EOT
 
     private function whereBelow($fields)
     {
-        $this->cache['below-where'] = $this->cache['below-where'] ?? (function () {
-                if ($this->input->getOption('below-where') !== null) {
-                    return $this->evaluate($this->input->getOption('below-where'));
-                }
-                return false;
-            })();
+        $this->cache['below-where'] ??= (function () {
+            if ($this->input->getOption('below-where') !== null) {
+                return $this->evaluate($this->input->getOption('below-where'));
+            }
+            return false;
+        })();
 
         if ($this->cache['below-where'] === false) {
             return true;
@@ -435,27 +435,27 @@ EOT
             return;
         }
 
-        $this->cache['order-by'] = $this->cache['order-by'] ?? (function () {
-                $orderBy = [];
-                foreach (quoteexplode(',', $this->input->getOption('order-by'), null, '`') as $col) {
-                    $prefix = $col[0];
-                    $col = ltrim($col, '+-');
-                    $ord = ['+' => true, '-' => false][$prefix] ?? true;
-                    if ($col[0] === '`') {
-                        $orderBy[] = [
-                            trim($col, '`'),
-                            $ord,
-                            function ($col, $fields) {
-                                return $this->evaluate($col)($fields);
-                            },
-                        ];
-                    }
-                    else {
-                        $orderBy[] = [$col, $ord, null];
-                    }
+        $this->cache['order-by'] ??= (function () {
+            $orderBy = [];
+            foreach (quoteexplode(',', $this->input->getOption('order-by'), null, '`') as $col) {
+                $prefix = $col[0];
+                $col = ltrim($col, '+-');
+                $ord = ['+' => true, '-' => false][$prefix] ?? true;
+                if ($col[0] === '`') {
+                    $orderBy[] = [
+                        trim($col, '`'),
+                        $ord,
+                        function ($col, $fields) {
+                            return $this->evaluate($col)($fields);
+                        },
+                    ];
                 }
-                return $orderBy;
-            })();
+                else {
+                    $orderBy[] = [$col, $ord, null];
+                }
+            }
+            return $orderBy;
+        })();
 
         usort($buffer, function ($a, $b) use ($allindex) {
             foreach ($this->cache['order-by'] as $orderBy) {
@@ -483,22 +483,22 @@ EOT
             return;
         }
 
-        $this->cache['group-by'] = $this->cache['group-by'] ?? (function () {
-                $group = [
-                    'key' => [],
-                    'val' => [],
-                ];
-                foreach (quoteexplode(',', $this->input->getOption('group-by'), null, '`') as $col) {
-                    $col = $this->expression($col);
-                    if (is_array($col)) {
-                        $group['val'] = $col + $group['val'];
-                    }
-                    elseif (is_string($col)) {
-                        $group['key'][$col] = null;
-                    }
+        $this->cache['group-by'] ??= (function () {
+            $group = [
+                'key' => [],
+                'val' => [],
+            ];
+            foreach (quoteexplode(',', $this->input->getOption('group-by'), null, '`') as $col) {
+                $col = $this->expression($col);
+                if (is_array($col)) {
+                    $group['val'] = $col + $group['val'];
                 }
-                return $group;
-            })();
+                elseif (is_string($col)) {
+                    $group['key'][$col] = null;
+                }
+            }
+            return $group;
+        })();
 
         $groups = [];
         foreach ($buffer as $line) {
@@ -525,7 +525,7 @@ EOT
 
     private function offset($index)
     {
-        $this->cache['offset'] = $this->cache['offset'] ?? (int) $this->input->getOption('offset');
+        $this->cache['offset'] ??= (int) $this->input->getOption('offset');
 
         if ($this->cache['offset'] === 0) {
             return true;
@@ -536,7 +536,7 @@ EOT
 
     private function limit($count)
     {
-        $this->cache['limit'] = $this->cache['limit'] ?? (int) $this->input->getOption('limit');
+        $this->cache['limit'] ??= (int) $this->input->getOption('limit');
 
         if ($this->cache['limit'] === 0) {
             return true;
