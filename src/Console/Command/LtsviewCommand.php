@@ -53,6 +53,7 @@ class LtsviewCommand extends Command
                 - e.g. sftp protocol4: sftp://sshconfig-host/path/to/ltsv (using ssh config)
             "),
             new InputOption('input', 'i', InputOption::VALUE_REQUIRED, "Specify input format[auto|jsonl|ltsv|csv|ssv|tsv].", 'auto'),
+            new InputOption('output', 'f', InputOption::VALUE_REQUIRED, "Specify output format[auto|yaml|json|jsonl|ltsv|csv|ssv|tsv|md|php].", 'auto'),
             new InputOption('regex', 'e', InputOption::VALUE_REQUIRED, "Specify regex for not lstv file (only named subpattern).
                 - e.g. combined log: --regex '/^(?<host>.*?) (.*?) (.*?) \[(?<time>.*?)\] \"(?<request>.*?)\" (?<status>.*?) (?<size>.*?) \"(?<referer>.*?)\" \"(?<uagent>.*?)\"$/'
                 - e.g. preset file:  --regex ./combined.txt
@@ -84,7 +85,6 @@ class LtsviewCommand extends Command
             new InputOption('offset', 'o', InputOption::VALUE_REQUIRED, "Specify skip count."),
             new InputOption('limit', 'l', InputOption::VALUE_REQUIRED, "Specify take count."),
             new InputOption('require', 'r', InputOption::VALUE_REQUIRED, "Specify require file.php."),
-            new InputOption('format', 'f', InputOption::VALUE_REQUIRED, "Specify output format[yaml|json|json|ltsv|tsv|md|php].", 'yaml'),
             new InputOption('below', 'b', InputOption::VALUE_REQUIRED, "Specify count below the matched where (keeping original order)."),
             new InputOption('below-where', 'W', InputOption::VALUE_REQUIRED, "Specify below filter statement."),
             new InputOption('compact', null, InputOption::VALUE_NONE, "Switch compact output."),
@@ -144,18 +144,24 @@ EOT
     {
         $this->cache = [];
 
-        $format = $this->input->getOption('format');
+        $output = $this->input->getOption('output');
         $below = (int) $this->input->getOption('below');
-
-        $type = AbstractType::instance($format, [
-            'comment' => !$this->input->getOption('nocomment'),
-            'compact' => !!$this->input->getOption('compact'),
-            'color'   => !$this->input->getOption('nocolor'),
-        ]);
 
         $from = $this->from();
         $header = (array) $from->current();
         $from->next();
+
+        if ($output === 'auto') {
+            $type = reset($this->cache['from'])['type'] ?? null;
+            if ($type === null && !$header) {
+                return;
+            }
+        }
+        $type ??= AbstractType::instance($output, [
+            'comment' => !$this->input->getOption('nocomment'),
+            'compact' => !!$this->input->getOption('compact'),
+            'color'   => !$this->input->getOption('nocolor'),
+        ]);
 
         $this->output->write($type->head(array_keys($this->column($header))));
 

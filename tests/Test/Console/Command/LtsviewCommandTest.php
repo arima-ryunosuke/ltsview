@@ -12,7 +12,7 @@ class LtsviewCommandTest extends AbstractTestCase
     protected $commandName = 'ltsview';
 
     protected $defaultArgs = [
-        '--format'    => 'php',
+        '--output'    => 'php',
         '--nocomment' => true,
         '--compact'   => true,
         '--nocolor'   => true,
@@ -50,7 +50,7 @@ class LtsviewCommandTest extends AbstractTestCase
             '--where'     => '$colA < 600',
             '--offset'    => 1,
             '--limit'     => 6,
-            '--format'    => 'ltsv',
+            '--output'    => 'ltsv',
             '--nocomment' => false,
         ]);
         $this->assertEquals('colA:456	colC:ho ge ra2
@@ -76,6 +76,15 @@ colA:345	colC:fu ga yo7
             ['a' => 'A1', 'b' => 'B1', 'c' => 'C1',],
             ['a' => 'A2', 'b' => 'B2', 'c' => 'C2',],
         ], eval("return $result;"), "Actual:\n$result");
+
+        ftruncate($this->stdin, 0);
+        rewind($this->stdin);
+
+        $result = $this->runApp([
+            'from'     => '-',
+            '--output' => 'auto',
+        ]);
+        $this->assertEquals('', $result);
     }
 
     function test_from_gz()
@@ -122,6 +131,21 @@ colA:345	colC:fu ga yo7
             ['colA' => '456', 'colB' => 'bbb', 'colC' => 'ho ge ra2',],
             ['colA' => '789', 'colB' => 'ccc', 'colC' => 'ho ge ra3',],
         ], eval("return $result;"), "Actual:\n$result");
+
+        $result = $this->runApp([
+            'from'     => [__DIR__ . '/_files/apache.log'],
+            '--select' => 'c5',
+            '--output' => 'auto',
+        ]);
+        $this->assertEquals(<<<SSV
+            GET /path/to/file1 HTTP/1.1
+            GET /path/to/file2 HTTP/1.1
+            GET /path/to/file1 HTTP/1.1
+            
+            GET /path/to/file2 HTTP/1.1
+            GET /path/to/file1 HTTP/1.1
+            
+            SSV, $result);
     }
 
     function test_from_regex()
@@ -605,7 +629,7 @@ colA:345	colC:fu ga yo7
         $result = $this->runApp([
             'from'        => [__DIR__ . '/_files/log1.ltsv'],
             '--nocomment' => false,
-            '--format'    => 'tsv',
+            '--output'    => 'tsv',
         ]);
         $this->assertEquals("colA	colB	colC
 123	aaa	ho ge ra1
@@ -617,7 +641,7 @@ colA:345	colC:fu ga yo7
             'from'        => [__DIR__ . '/_files/log1.ltsv'],
             '--select'    => '~colB',
             '--nocomment' => false,
-            '--format'    => 'tsv',
+            '--output'    => 'tsv',
         ]);
         $this->assertEquals("colA	colC
 123	ho ge ra1
@@ -647,7 +671,7 @@ colA:345	colC:fu ga yo7
         $result = $this->runApp([
             'from'        => [$fname],
             '--nocomment' => false,
-            '--format'    => 'yaml',
+            '--output'    => 'yaml',
         ]);
         $this->assertStringContainsString("# $fname:1", $result);
         $this->assertStringContainsString("# $fname:2", $result);
@@ -656,7 +680,7 @@ colA:345	colC:fu ga yo7
         $result = $this->runApp([
             'from'        => [$fname],
             '--nocomment' => false,
-            '--format'    => 'yaml',
+            '--output'    => 'yaml',
             '--offset'    => 1,
             '--limit'     => 2,
         ]);
@@ -666,7 +690,7 @@ colA:345	colC:fu ga yo7
         $result = $this->runApp([
             'from'          => [$fname],
             '--nocomment'   => false,
-            '--format'      => 'yaml',
+            '--output'      => 'yaml',
             '--select'      => 'colC',
             '--where'       => '$colC == 2',
             '--below'       => 3,
