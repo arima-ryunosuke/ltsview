@@ -11,8 +11,8 @@ if (!$files) {
 }
 require_once reset($files);
 
-$command = new \ryunosuke\ltsv\Console\Command\LtsviewCommand();
-$application = new \Symfony\Component\Console\Application('ltsv', $command::VERSION);
+$command = new \ryunosuke\ltsv\Console\Command\LogrepCommand();
+$application = new \Symfony\Component\Console\Application('logrep', $command::VERSION);
 $application->add($command);
 $application->setDefaultCommand($command::NAME, true);
 $application->run();

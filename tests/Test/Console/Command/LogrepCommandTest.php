@@ -2,14 +2,14 @@
 
 namespace ryunosuke\test\Console\Command;
 
-use ryunosuke\ltsv\Console\Command\LtsviewCommand;
+use ryunosuke\ltsv\Console\Command\LogrepCommand;
 
-class LtsviewCommandTest extends AbstractTestCase
+class LogrepCommandTest extends AbstractTestCase
 {
-    /** @var LtsviewCommand */
+    /** @var LogrepCommand */
     private $command;
 
-    protected $commandName = 'ltsview';
+    protected $commandName = 'logrep';
 
     protected $defaultArgs = [
         '--output'    => 'php',
@@ -24,7 +24,7 @@ class LtsviewCommandTest extends AbstractTestCase
     {
         parent::setUp();
 
-        $this->command = new LtsviewCommand('test');
+        $this->command = new LogrepCommand('test');
 
         $ref = new \ReflectionClass($this->command);
         $stdin = $ref->getProperty('STDIN');

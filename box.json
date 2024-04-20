@@ -30,7 +30,7 @@
       ]
     }
   ],
-  "main": "bin/ltsview",
-  "output": "ltsview.phar",
+  "main": "bin/logrep",
+  "output": "logrep.phar",
   "stub": true
 }

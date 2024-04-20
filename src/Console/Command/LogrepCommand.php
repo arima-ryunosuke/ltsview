@@ -16,9 +16,9 @@ use function ryunosuke\ltsv\quoteexplode;
 use function ryunosuke\ltsv\split_noempty;
 use function ryunosuke\ltsv\var_export2;
 
-class LtsviewCommand extends Command
+class LogrepCommand extends Command
 {
-    public const NAME    = 'ltsview';
+    public const NAME    = 'logrep';
     public const VERSION = '1.0.6';
 
     private static $STDIN = STDIN;
@@ -37,15 +37,15 @@ class LtsviewCommand extends Command
     protected function configure()
     {
         $bufferingMode = "<comment>This option forces buffering mode.</comment>";
-        $this->setName(self::NAME)->setDescription('pretty view ltsv format.');
+        $this->setName(self::NAME)->setDescription('pretty view formatted log.');
         $this->setDefinition([
             new InputArgument('from', InputArgument::OPTIONAL | InputArgument::IS_ARRAY, "Specify input file. '-' means STDIN. and support stream wrapper.
-                - e.g. local file:     /path/to/ltsv
+                - e.g. local file:     /path/to/log
                 - e.g. specify stdin:  -
-                - e.g. sftp protocol1: sftp://user:pass@host/path/to/ltsv (embedded password. very dangerous)
-                - e.g. sftp protocol2: sftp://user:-@host/path/to/ltsv (using stdin input)
-                - e.g. sftp protocol3: sftp://user@host/path/to/ltsv (using ssh agent)
-                - e.g. sftp protocol4: sftp://sshconfig-host/path/to/ltsv (using ssh config)
+                - e.g. sftp protocol1: sftp://user:pass@host/path/to/log (embedded password. very dangerous)
+                - e.g. sftp protocol2: sftp://user:-@host/path/to/log (using stdin input)
+                - e.g. sftp protocol3: sftp://user@host/path/to/log (using ssh agent)
+                - e.g. sftp protocol4: sftp://sshconfig-host/path/to/log (using ssh config)
             "),
             new InputOption('input', 'i', InputOption::VALUE_REQUIRED, "Specify input format[auto|jsonl|ltsv|csv|ssv|tsv].", 'auto'),
             new InputOption('output', 'f', InputOption::VALUE_REQUIRED, "Specify output format[auto|yaml|json|jsonl|ltsv|csv|ssv|tsv|md|php].", 'auto'),
@@ -89,22 +89,22 @@ class LtsviewCommand extends Command
         ]);
         $this->setHelp(<<<EOT
 <info># simple use STDIN</info>
-cat /path/to/ltsv.log | ltsview --select col1,col2
+cat /path/to/log.jsonl | logrep --select col1,col2
 
 <info># specify files</info>
-ltsview /path/to/ltsv.log --select col1,col2
+logrep /path/to/log.jsonl --select col1,col2
 
 <info># ignore column</info>
-ltsview /path/to/ltsv.log --select ~col3
+logrep /path/to/log.jsonl --select ~col3
 
 <info># virtual column</info>
-ltsview /path/to/ltsv.log --select 'col1, hoge:`strtotime(\$reqtime)`'
+logrep /path/to/log.jsonl --select 'col1, hoge:`strtotime(\$reqtime)`'
 
 <info># filtering statement</info>
-ltsview /path/to/ltsv.log --where '1 <= \$col1 && \$col1 <= 99'
+logrep /path/to/log.jsonl --where '1 <= \$col1 && \$col1 <= 99'
 
 <info># virtual and filtering</info>
-ltsview /path/to/ltsv.log --select 'col1, hoge:`strtotime(\$reqtime)`' --where '\$hoge <= 1234567890'
+logrep /path/to/log.jsonl --select 'col1, hoge:`strtotime(\$reqtime)`' --where '\$hoge <= 1234567890'
 EOT
         );
     }

@@ -6,7 +6,7 @@
   },
   "name": "ryunosuke/ltsview",
   "type": "command",
-  "description": "pretty view ltsv format",
+  "description": "pretty log view",
   "license": "MIT",
   "authors": [
     {
@@ -41,7 +41,7 @@
     ]
   },
   "bin": [
-    "bin/ltsview"
+    "bin/logrep"
   ],
   "scripts": {
     "build": [
