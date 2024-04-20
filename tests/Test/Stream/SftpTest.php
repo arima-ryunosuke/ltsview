@@ -2,6 +2,7 @@
 
 namespace ryunosuke\test\Stream;
 
+use phpseclib3\Crypt\RSA;
 use phpseclib3\Crypt\RSA\PrivateKey;
 use phpseclib3\System\SSH\Agent;
 use ryunosuke\ltsv\Stream\Sftp;
@@ -9,6 +10,8 @@ use ryunosuke\ltsv\Stream\Sftp;
 class SftpTest extends AbstractTestCase
 {
     protected $urlParts;
+
+    protected $identity_file;
 
     protected function setUp(): void
     {
@@ -19,6 +22,10 @@ class SftpTest extends AbstractTestCase
         /** @noinspection PhpUndefinedConstantInspection */
         $this->urlParts = parse_uri(SFTP);
         Sftp::register('sftp');
+
+        $this->identity_file = sys_get_temp_dir() . '/dummy.key';
+        file_put_contents($this->identity_file, RSA::createKey()->toString('OpenSsh'));
+        $this->identity_file = realpath($this->identity_file);
     }
 
     function test_parse_path()
@@ -43,13 +50,12 @@ class SftpTest extends AbstractTestCase
         $_SERVER['unittest'] = true;
         $_SERVER['USERNAME'] = 'hoge';
         $_SERVER['HOMEPATH'] = sys_get_temp_dir();
-        $identity_file = __DIR__ . '/_files/dummy.key';
         file_set_contents($_SERVER['HOMEPATH'] . '/.ssh/config', <<<CONFIG
 Host hogera
   HostName     host
   User         user
   Port         2222
-  IdentityFile $identity_file
+  IdentityFile $this->identity_file
 CONFIG
         );
 
@@ -124,13 +130,13 @@ CONFIG
                 'user'         => 'user1',
                 'hostname'     => '%h.domain1',
                 'port'         => '221',
-                'identityfile' => __DIR__ . '/_files/dummy.key',
+                'identityfile' => $this->identity_file,
             ],
             'hogera.*'       => [
                 'user'         => 'user2',
                 'hostname'     => '%h.domain2',
                 'port'         => '222',
-                'identityfile' => __DIR__ . '/_files/dummy.key',
+                'identityfile' => $this->identity_file,
             ],
         ];
 
