@@ -11,6 +11,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use function ryunosuke\ltsv\evaluate;
 use function ryunosuke\ltsv\ini_sets;
+use function ryunosuke\ltsv\path_info;
 use function ryunosuke\ltsv\quoteexplode;
 use function ryunosuke\ltsv\split_noempty;
 use function ryunosuke\ltsv\var_export2;
@@ -51,6 +52,7 @@ class LtsviewCommand extends Command
                 - e.g. sftp protocol3: sftp://user@host/path/to/ltsv (using ssh agent)
                 - e.g. sftp protocol4: sftp://sshconfig-host/path/to/ltsv (using ssh config)
             "),
+            new InputOption('input', 'i', InputOption::VALUE_REQUIRED, "Specify input format[auto|jsonl|ltsv|csv|ssv|tsv].", 'auto'),
             new InputOption('regex', 'e', InputOption::VALUE_REQUIRED, "Specify regex for not lstv file (only named subpattern).
                 - e.g. combined log: --regex '/^(?<host>.*?) (.*?) (.*?) \[(?<time>.*?)\] \"(?<request>.*?)\" (?<status>.*?) (?<size>.*?) \"(?<referer>.*?)\" \"(?<uagent>.*?)\"$/'
                 - e.g. preset file:  --regex ./combined.txt
@@ -261,62 +263,100 @@ EOT
     private function from()
     {
         // shoddy emulation glob (https://www.php.net/manual/function.glob.php)
-        $froms = [];
-        foreach ((array) ($this->input->getArgument('from') ?: '-') as $from) {
-            $pathinfo = pathinfo($from);
-            $scheme = self::$EXTRACT_SCHEME[$pathinfo['extension'] ?? null] ?? '';
+        $this->cache['from'] ??= (function () {
+            $froms = [];
+            foreach ((array) ($this->input->getArgument('from') ?: '-') as $from) {
+                $pathinfo = path_info($from);
 
-            if ($from === '-' || file_exists($from)) {
-                $froms[] = [
-                    'scheme' => $scheme,
-                    'path'   => $from,
-                ];
-            }
-            else {
-                foreach (scandir($pathinfo['dirname'], SCANDIR_SORT_NONE) as $entry) {
-                    if ($entry === '.' || $entry === '..') {
-                        continue;
-                    }
-                    if (fnmatch($pathinfo['basename'], $entry)) {
-                        $froms[] = [
-                            'scheme' => $scheme,
-                            'path'   => $pathinfo['dirname'] . DIRECTORY_SEPARATOR . $entry,
-                        ];
+                if ($from === '-' || file_exists($from)) {
+                    $froms[] = [
+                        'scheme' => self::$EXTRACT_SCHEME[$pathinfo['extension'] ?? null] ?? '',
+                        'path'   => $from,
+                        'ext'    => $pathinfo['extensions'][0] ?? null,
+                    ];
+                }
+                else {
+                    foreach (scandir($pathinfo['dirname'], SCANDIR_SORT_NONE) as $entry) {
+                        if ($entry === '.' || $entry === '..') {
+                            continue;
+                        }
+                        if (fnmatch($pathinfo['basename'], $entry)) {
+                            $pathinfo2 = path_info($entry);
+                            $froms[] = [
+                                'scheme' => self::$EXTRACT_SCHEME[$pathinfo2['extension'] ?? null] ?? '',
+                                'path'   => $pathinfo['dirname'] . DIRECTORY_SEPARATOR . $entry,
+                                'ext'    => $pathinfo2['extensions'][0] ?? null,
+                            ];
+                        }
                     }
                 }
             }
-        }
+            return $froms;
+        })();
 
+        $itype = $this->input->getOption('input');
         $regex = $this->input->getOption('regex');
         if (file_exists($regex)) {
             $regex = trim(file_get_contents($regex));
         }
         $seq = 0;
-        foreach ($froms as $from) {
+        foreach ($this->cache['from'] as &$from) {
             $handle = $from['path'] === '-' ? self::$STDIN : fopen($from['scheme'] . $from['path'], 'r');
             $n = 0;
             while (($line = fgets($handle)) !== false) {
                 $n++;
-                if (strlen(trim($line))) {
+                $line = trim($line);
+                if (strlen($line)) {
                     if ($regex) {
                         if (!preg_match($regex, $line, $m)) {
                             continue;
                         }
-                        $ltsv = [];
+                        $item = [];
                         foreach ($m as $name => $value) {
                             if (is_string($name)) {
-                                $ltsv[trim($name)] = trim($value);
+                                $item[trim($name)] = trim($value);
                             }
                         }
                     }
                     else {
-                        $ltsv = str_array(explode("\t", $line), ':', true);
+                        $from['type'] ??= (function ($itype, $line, $ext) {
+                            if ($itype === 'auto') {
+                                $aliases = [
+                                    ''     => 'ssv',
+                                    'log'  => 'ssv',
+                                    'json' => 'jsonl',
+                                ];
+                                $itype = $aliases[$ext] ?? $ext;
+                            }
+                            $option = [
+                                'comment' => !$this->input->getOption('nocomment'),
+                                'compact' => !!$this->input->getOption('compact'),
+                                'color'   => !$this->input->getOption('nocolor'),
+                            ];
+                            try {
+                                return AbstractType::instance($itype, $option);
+                            }
+                            catch (\Throwable $t) {
+                                foreach ([
+                                    'jsonl',
+                                    'ltsv',
+                                ] as $ext) {
+                                    $instance = AbstractType::instance($ext, $option);
+                                    if ($instance->parse($line) !== null) {
+                                        return $instance;
+                                    }
+                                }
+                                throw $t; // @codeCoverageIgnore
+                            }
+                        })($itype, $line, $from['ext']);
+
+                        $item = $from['type']->parse($line);
                     }
                     // for detect header
                     if ($seq === 0) {
-                        yield array_keys($ltsv);
+                        yield array_keys($item);
                     }
-                    yield [$seq++, $from['path'], $n, $ltsv];
+                    yield [$seq++, $from['path'], $n, $item];
                 }
             }
         }
@@ -364,7 +404,7 @@ EOT
 
         foreach ($this->cache['column'] as $column => $mapper) {
             if ($mapper === null) {
-                $result[$column] = $fields[$column];
+                $result[$column] = $fields[$column] ?? null;
             }
             elseif ($mapper instanceof \Closure) {
                 $result[$column] = $mapper($fields);

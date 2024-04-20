@@ -6,6 +6,11 @@ use function ryunosuke\ltsv\str_array;
 
 class Ltsv extends AbstractType
 {
+    public function parse($string)
+    {
+        return str_array(explode("\t", $string), ':', true);
+    }
+
     public function head($column) { }
 
     public function meta($file, $n) { }

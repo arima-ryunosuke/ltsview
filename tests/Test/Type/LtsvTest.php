@@ -21,4 +21,9 @@ class LtsvTest extends AbstractTestCase
             return $result;
         };
     }
+
+    function test_parse()
+    {
+        $this->assertEquals(['a' => 'A', 'b' => 'B'], $this->type->parse("a:A\tb:B"));
+    }
 }

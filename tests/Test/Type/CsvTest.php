@@ -22,6 +22,11 @@ class CsvTest extends AbstractTestCase
         };
     }
 
+    function test_parse()
+    {
+        $this->assertEquals(['c0' => 'a', 'c1' => 'b,c'], $this->type->parse('a,"b,c"'));
+    }
+
     function test_meta()
     {
         $type = $this->getType([

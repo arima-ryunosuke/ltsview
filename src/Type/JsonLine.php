@@ -6,6 +6,11 @@ class JsonLine extends AbstractType
 {
     private $meta = '';
 
+    public function parse($string)
+    {
+        return json_decode($string, true);
+    }
+
     public function head($column) { }
 
     public function meta($file, $n)

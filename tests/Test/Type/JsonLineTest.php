@@ -15,6 +15,11 @@ class JsonLineTest extends AbstractTestCase
         };
     }
 
+    function test_parse()
+    {
+        $this->assertEquals(['a' => 'A', 'b' => 'B'], $this->type->parse('{"a":"A","b":"B"}'));
+    }
+
     function test_meta()
     {
         $type = $this->getType([

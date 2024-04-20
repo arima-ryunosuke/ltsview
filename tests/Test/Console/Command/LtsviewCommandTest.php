@@ -45,7 +45,7 @@ class LtsviewCommandTest extends AbstractTestCase
     function test_all()
     {
         $result = $this->runApp([
-            'from'        => [__DIR__ . '/_files/log1.ltsv', __DIR__ . '/_files/log2.ltsv'],
+            'from'        => [__DIR__ . '/_files/log1.jsonl', __DIR__ . '/_files/log2.ltsv'],
             '--select'    => 'colA, colC',
             '--where'     => '$colA < 600',
             '--offset'    => 1,
@@ -69,7 +69,8 @@ colA:345	colC:fu ga yo7
         rewind($this->stdin);
 
         $result = $this->runApp([
-            'from' => '-',
+            'from'    => '-',
+            '--input' => 'unknown',
         ]);
         $this->assertEquals([
             ['a' => 'A1', 'b' => 'B1', 'c' => 'C1',],
@@ -98,6 +99,29 @@ colA:345	colC:fu ga yo7
             'from' => __DIR__ . '/_files/log*.ltsv',
         ]);
         $this->assertEquals($expected, $result);
+    }
+
+    function test_from_input()
+    {
+        $result = $this->runApp([
+            'from'    => [__DIR__ . '/_files/log1.ltsv'],
+            '--input' => 'ltsv',
+        ]);
+        $this->assertEquals([
+            ['colA' => '123', 'colB' => 'aaa', 'colC' => 'ho ge ra1',],
+            ['colA' => '456', 'colB' => 'bbb', 'colC' => 'ho ge ra2',],
+            ['colA' => '789', 'colB' => 'ccc', 'colC' => 'ho ge ra3',],
+        ], eval("return $result;"), "Actual:\n$result");
+
+        $result = $this->runApp([
+            'from'    => [__DIR__ . '/_files/log1.jsonl'],
+            '--input' => 'jsonl',
+        ]);
+        $this->assertEquals([
+            ['colA' => '123', 'colB' => 'aaa', 'colC' => 'ho ge ra1',],
+            ['colA' => '456', 'colB' => 'bbb', 'colC' => 'ho ge ra2',],
+            ['colA' => '789', 'colB' => 'ccc', 'colC' => 'ho ge ra3',],
+        ], eval("return $result;"), "Actual:\n$result");
     }
 
     function test_from_regex()

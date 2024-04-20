@@ -31,6 +31,12 @@ abstract class AbstractTestCase extends \ryunosuke\test\AbstractTestCase
         ]);
     }
 
+    function test_parse()
+    {
+        $this->expectException(\DomainException::class);
+        $this->type->parse('');
+    }
+
     function test_syntax()
     {
         $fields = ['a' => 'A', 'b' => 'B', 'c' => 'C'];

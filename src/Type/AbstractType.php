@@ -44,6 +44,11 @@ abstract class AbstractType
         $this->color_mode = $option['color'];
     }
 
+    public function parse($string)
+    {
+        throw new \DomainException(static::class . '::parse is not supported');
+    }
+
     abstract public function head($column);
 
     abstract public function meta($file, $n);

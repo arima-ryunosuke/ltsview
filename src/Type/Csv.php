@@ -13,6 +13,12 @@ class Csv extends AbstractType
         $this->separator = $option['separator'];
     }
 
+    public function parse($string)
+    {
+        $fields = str_getcsv($string, $this->separator);
+        return array_combine(array_map(fn($k) => "c$k", array_keys($fields)), $fields);
+    }
+
     public function head($column)
     {
         if ($this->comment_mode) {
