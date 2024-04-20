@@ -20,6 +20,16 @@
 
 - no todo
 
+## 2.0.0
+
+- [*change] ltsview 改め logrep
+- [fixbug] リモートプロトコルで圧縮スキームが有効になっていない不具合を修正
+- [fixbug] select が指定順になっていない不具合を修正
+- [*change] 出力フォーマットは入力フォーマットと同じになるように修正
+- [feature] 入力フォーマット対応
+- [feature] CSV,SSV を追加
+- [fixbug] select が指定順になっていない不具合を修正
+
 ## 1.1.0
 
 - [change] パッケージのアップデート
