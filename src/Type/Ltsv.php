@@ -2,6 +2,8 @@
 
 namespace ryunosuke\ltsv\Type;
 
+use function ryunosuke\ltsv\str_array;
+
 class Ltsv extends AbstractType
 {
     public function head($column) { }

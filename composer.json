@@ -16,12 +16,12 @@
   ],
   "require": {
     "php": ">=7.4",
-    "ryunosuke/functions": "1.6.*",
     "symfony/console": "4.*",
     "symfony/yaml": "*",
     "phpseclib/phpseclib": "3.*"
   },
   "require-dev": {
+    "ryunosuke/functions": "1.6.*",
     "phpunit/phpunit": "9.*"
   },
   "autoload": {
@@ -29,13 +29,16 @@
       "ryunosuke\\ltsv\\": "src"
     },
     "files": [
-      "vendor/ryunosuke/functions/include/global.php"
+      "src/functions.stub"
     ]
   },
   "autoload-dev": {
     "psr-4": {
       "ryunosuke\\test\\": "tests/Test"
-    }
+    },
+    "files": [
+      "tests/functions.php"
+    ]
   },
   "bin": [
     "bin/ltsview"
@@ -48,6 +51,7 @@
       "@composer box"
     ],
     "export": [
+      "export-function",
       "exclude-internal"
     ],
     "test": [

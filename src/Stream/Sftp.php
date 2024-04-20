@@ -3,6 +3,8 @@
 namespace ryunosuke\ltsv\Stream;
 
 use ryunosuke\ltsv\Traits\User;
+use function ryunosuke\ltsv\build_uri;
+use function ryunosuke\ltsv\parse_uri;
 
 class Sftp extends \phpseclib3\Net\SFTP\Stream
 {

@@ -9,6 +9,11 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use function ryunosuke\ltsv\evaluate;
+use function ryunosuke\ltsv\ini_sets;
+use function ryunosuke\ltsv\quoteexplode;
+use function ryunosuke\ltsv\split_noempty;
+use function ryunosuke\ltsv\var_export2;
 
 class LtsviewCommand extends Command
 {

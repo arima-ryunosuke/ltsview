@@ -6,6 +6,9 @@ use phpseclib3\Crypt\RSA;
 use phpseclib3\Crypt\RSA\PrivateKey;
 use phpseclib3\System\SSH\Agent;
 use ryunosuke\ltsv\Stream\Sftp;
+use function ryunosuke\ltsv\array_unset;
+use function ryunosuke\ltsv\file_set_contents;
+use function ryunosuke\ltsv\parse_uri;
 
 class SftpTest extends AbstractTestCase
 {
