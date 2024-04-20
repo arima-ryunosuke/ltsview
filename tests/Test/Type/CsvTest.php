@@ -2,7 +2,7 @@
 
 namespace ryunosuke\test\Type;
 
-class TsvTest extends AbstractTestCase
+class CsvTest extends AbstractTestCase
 {
     protected function setUp(): void
     {
@@ -11,7 +11,7 @@ class TsvTest extends AbstractTestCase
         $this->decoder = function ($string) {
             $result = [];
             foreach (preg_split('#\\R#u', $string, -1, PREG_SPLIT_NO_EMPTY) as $line) {
-                $fields = explode("\t", trim($line));
+                $fields = explode(",", trim($line));
                 if (!isset($columns)) {
                     $columns = $fields;
                     continue;
@@ -35,6 +35,6 @@ class TsvTest extends AbstractTestCase
         $buffer .= $type->meta('dummy', 1);
         $buffer .= $type->body($fields);
         $buffer .= $type->foot();
-        $this->assertEquals("A	B	C\n", $buffer, "Actual:\n$buffer");
+        $this->assertEquals("A,B,C\n", $buffer, "Actual:\n$buffer");
     }
 }
