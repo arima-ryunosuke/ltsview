@@ -386,7 +386,7 @@ EOT
                     continue;
                 }
                 if (is_array($select)) {
-                    $column = $select + $column;
+                    $column = array_replace($column, $select);
                 }
                 elseif ($select === '*') {
                     $column = array_fill_keys($header, null);
