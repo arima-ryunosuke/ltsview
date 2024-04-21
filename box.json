@@ -1,36 +1,5 @@
 {
   "compression": "GZ",
-  "files": [
-    "vendor/autoload.php",
-    "vendor/ryunosuke/functions/include/global.php"
-  ],
-  "finder": [
-    {
-      "name": "*.php",
-      "exclude": [
-        "Examples",
-        "test",
-        "tests",
-        "Test",
-        "Tests",
-        "unitTests"
-      ],
-      "in": [
-        "src",
-        "vendor/composer",
-        "vendor/psr",
-        "vendor/symfony/console",
-        "vendor/symfony/polyfill-ctype",
-        "vendor/symfony/polyfill-mbstring",
-        "vendor/symfony/polyfill-php73",
-        "vendor/symfony/polyfill-php80",
-        "vendor/symfony/service-contracts",
-        "vendor/symfony/yaml",
-        "vendor/phpseclib"
-      ]
-    }
-  ],
-  "main": "bin/logrep",
-  "output": "logrep.phar",
-  "stub": true
+  "chmod": "0755",
+  "output": "logrep.phar"
 }
