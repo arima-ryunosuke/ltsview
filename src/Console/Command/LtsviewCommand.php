@@ -23,11 +23,6 @@ class LtsviewCommand extends Command
 
     private static $STDIN = STDIN;
 
-    private static $EXTRACT_SCHEME = [
-        'gz'  => 'compress.zlib://',
-        'bz2' => 'compress.bzip2://',
-    ];
-
     /** @var InputInterface */
     private $input;
 
@@ -270,14 +265,29 @@ EOT
     {
         // shoddy emulation glob (https://www.php.net/manual/function.glob.php)
         $this->cache['from'] ??= (function () {
+            $filter = function (&$exts) {
+                $inflaters = [
+                    'gz'  => ['zlib.inflate', STREAM_FILTER_READ, ['window' => 15 + 16]],
+                    'bz2' => ['bzip2.decompress', STREAM_FILTER_READ, []],
+                ];
+                $filters = [];
+                foreach ($exts as $n => $ext) {
+                    if (isset($inflaters[$ext])) {
+                        $filters[] = $inflaters[$ext];
+                        unset($exts[$n]);
+                    }
+                }
+                $exts = array_values($exts);
+                return array_reverse($filters);
+            };
             $froms = [];
             foreach ((array) ($this->input->getArgument('from') ?: '-') as $from) {
                 $pathinfo = path_info($from);
 
                 if ($from === '-' || file_exists($from)) {
                     $froms[] = [
-                        'scheme' => self::$EXTRACT_SCHEME[$pathinfo['extension'] ?? null] ?? '',
                         'path'   => $from,
+                        'filter' => $filter($pathinfo['extensions']),
                         'ext'    => $pathinfo['extensions'][0] ?? null,
                     ];
                 }
@@ -289,8 +299,8 @@ EOT
                         if (fnmatch($pathinfo['basename'], $entry)) {
                             $pathinfo2 = path_info($entry);
                             $froms[] = [
-                                'scheme' => self::$EXTRACT_SCHEME[$pathinfo2['extension'] ?? null] ?? '',
                                 'path'   => $pathinfo['dirname'] . DIRECTORY_SEPARATOR . $entry,
+                                'filter' => $filter($pathinfo2['extensions']),
                                 'ext'    => $pathinfo2['extensions'][0] ?? null,
                             ];
                         }
@@ -307,7 +317,10 @@ EOT
         }
         $seq = 0;
         foreach ($this->cache['from'] as &$from) {
-            $handle = $from['path'] === '-' ? self::$STDIN : fopen($from['scheme'] . $from['path'], 'r');
+            $handle = $from['path'] === '-' ? self::$STDIN : fopen($from['path'], 'r');
+            foreach ($from['filter'] as $filter) {
+                stream_filter_append($handle, ...$filter);
+            }
             $n = 0;
             while (($line = fgets($handle)) !== false) {
                 $n++;

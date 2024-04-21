@@ -87,10 +87,21 @@ colA:345	colC:fu ga yo7
         $this->assertEquals('', $result);
     }
 
-    function test_from_gz()
+    function test_from_decompress()
     {
+        $expected = [
+            ['colB' => 'aaa', 'colA' => '123', 'colC' => 'ho ge ra1',],
+            ['colB' => 'bbb', 'colA' => '456', 'colC' => 'ho ge ra2',],
+            ['colB' => 'ccc', 'colA' => '789', 'colC' => 'ho ge ra3',],
+        ];
+
         $result = $this->runApp([
             'from' => __DIR__ . '/_files/log.ltsv.gz',
+        ]);
+        $this->assertEquals($expected, eval("return $result;"), "Actual:\n$result");
+
+        $result = $this->runApp([
+            'from' => __DIR__ . '/_files/log.ltsv.bz2',
         ]);
         $this->assertEquals([
             ['colB' => 'aaa', 'colA' => '123', 'colC' => 'ho ge ra1',],
