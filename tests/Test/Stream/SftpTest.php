@@ -65,21 +65,21 @@ CONFIG
         $sftp = new Sftp();
 
         if (DIRECTORY_SEPARATOR === '\\') {
-            $parts = $sftp->_parse_path('sftp://dummy');
+            $parts = $sftp->parse_uri('sftp://dummy');
             $this->assertEquals('hoge', $parts['user']);
 
-            $parts = $sftp->_parse_path('sftp://hogera');
+            $parts = $sftp->parse_uri('sftp://hogera');
             $this->assertEquals('host', $parts['host']);
             $this->assertEquals('2222', $parts['port']);
             $this->assertEquals('user', $parts['user']);
             $this->assertInstanceOf(PrivateKey::class, $parts['key']);
         }
 
-        $parts = $sftp->_parse_path('sftp://user:@host:22');
+        $parts = $sftp->parse_uri('sftp://user:@host:22');
         $this->assertInstanceOf(Agent::class, $parts['key']);
         $this->assertStringStartsWith(Agent::class, (string) $parts['key']);
 
-        $parts = $sftp->_parse_path('sftp://user:-@host:22');
+        $parts = $sftp->parse_uri('sftp://user:-@host:22');
         $this->assertIsArray($parts['key']);
 
         $_SERVER = $backup;
@@ -106,7 +106,7 @@ Host hogera.*
 CONFIG
         );
 
-        $this->assertEmpty($sftp->_parse_config('notfound'));
+        $this->assertEmpty($sftp->parse_config('notfound'));
 
         $this->assertEquals([
             'hoge-fuga-piyo' => [
@@ -121,7 +121,7 @@ CONFIG
                 'port'         => '222',
                 'identityfile' => '~/.ssh/id_rsa2',
             ],
-        ], $sftp->_parse_config(sys_get_temp_dir() . '/ssh.config'));
+        ], $sftp->parse_config(sys_get_temp_dir() . '/ssh.config'));
     }
 
     function test__resolve_host()
@@ -143,12 +143,12 @@ CONFIG
             ],
         ];
 
-        $config = $sftp->_resolve_host(['host' => 'unknown'], $sshconfig);
+        $config = $sftp->resolve_host(['host' => 'unknown'], $sshconfig);
         $this->assertEquals([
             'host' => 'unknown',
         ], $config);
 
-        $config = $sftp->_resolve_host(['host' => 'hoge-fuga-piyo'], $sshconfig);
+        $config = $sftp->resolve_host(['host' => 'hoge-fuga-piyo'], $sshconfig);
         $this->assertInstanceOf(PrivateKey::class, array_unset($config, 'key'));
         $this->assertEquals([
             'host' => 'hoge-fuga-piyo.domain1',
@@ -156,7 +156,7 @@ CONFIG
             'user' => 'user1',
         ], $config);
 
-        $config = $sftp->_resolve_host(['host' => 'hogera.sub'], $sshconfig);
+        $config = $sftp->resolve_host(['host' => 'hogera.sub'], $sshconfig);
         $this->assertInstanceOf(PrivateKey::class, array_unset($config, 'key'));
         $this->assertEquals([
             'host' => 'hogera.sub.domain2',

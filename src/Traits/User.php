@@ -4,7 +4,7 @@ namespace ryunosuke\ltsv\Traits;
 
 trait User
 {
-    public function getUser()
+    public function getUser(): array
     {
         if (function_exists('posix_geteuid') && function_exists('posix_getpwuid')) {
             return posix_getpwuid(posix_geteuid()); // @codeCoverageIgnore
@@ -18,7 +18,7 @@ trait User
         }
     }
 
-    public function resolveHome($path)
+    public function resolveHome(string $path): string
     {
         // shoddy
         return str_replace('~', $this->getUser()['dir'], $path);

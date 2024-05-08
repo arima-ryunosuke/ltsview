@@ -4,15 +4,15 @@ namespace ryunosuke\ltsv\Type;
 
 class Json extends AbstractType
 {
-    private $first = true;
-    private $meta  = '';
+    private bool $first = true;
+    private string $meta  = '';
 
-    public function head($column)
+    public function head(array $columns): string
     {
         return "[\n";
     }
 
-    public function meta($file, $n)
+    public function meta(string $file, int $n): string
     {
         if ($this->comment_mode) {
             $this->meta = "$file:$n";
@@ -20,7 +20,7 @@ class Json extends AbstractType
         return '';
     }
 
-    public function body($fields)
+    public function body(array $fields): string
     {
         $first = $this->first;
         $this->first = false;
@@ -60,7 +60,7 @@ class Json extends AbstractType
         }
     }
 
-    public function foot()
+    public function foot(): string
     {
         return "\n]\n";
     }

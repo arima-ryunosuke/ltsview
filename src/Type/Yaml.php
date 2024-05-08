@@ -4,12 +4,12 @@ namespace ryunosuke\ltsv\Type;
 
 class Yaml extends AbstractType
 {
-    public function head($column)
+    public function head(array $columns): string
     {
         return '';
     }
 
-    public function meta($file, $n)
+    public function meta(string $file, int $n): string
     {
         if ($this->comment_mode) {
             return $this->colorComment("# $file:$n\n");
@@ -17,7 +17,7 @@ class Yaml extends AbstractType
         return '';
     }
 
-    public function body($fields)
+    public function body(array $fields): string
     {
         if ($this->compact_mode) {
             $result = [];
@@ -39,7 +39,7 @@ class Yaml extends AbstractType
         }
     }
 
-    public function foot()
+    public function foot(): string
     {
         return '';
     }

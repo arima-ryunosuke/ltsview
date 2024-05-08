@@ -47,17 +47,17 @@ class AbstractTypeTest extends \ryunosuke\test\AbstractTestCase
 
 class Mock extends AbstractType
 {
-    public function head($column) { }
+    public function head(array $columns): string { }
 
-    public function meta($file, $n) { }
+    public function meta(string $file, int $n): string { }
 
-    public function body($fields) { }
+    public function body(array $fields): string { }
 
-    public function foot() { }
+    public function foot(): string { }
 
-    public function colorComment($string) { return parent::colorComment($string); }
+    public function colorComment(string $string): string { return parent::colorComment($string); }
 
-    public function colorLabel($string) { return parent::colorLabel($string); }
+    public function colorLabel(string $string): string { return parent::colorLabel($string); }
 
-    public function colorValue($string) { return parent::colorValue($string); }
+    public function colorValue(string $string): string { return parent::colorValue($string); }
 }

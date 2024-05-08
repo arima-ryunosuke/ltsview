@@ -6,22 +6,22 @@ use function ryunosuke\ltsv\str_array;
 
 class Ltsv extends AbstractType
 {
-    public function parse($string)
+    public function parse(string $string): ?array
     {
         return str_array(explode("\t", $string), ':', true);
     }
 
-    public function head($column)
+    public function head(array $columns): string
     {
         return '';
     }
 
-    public function meta($file, $n)
+    public function meta(string $file, int $n): string
     {
         return '';
     }
 
-    public function body($fields)
+    public function body(array $fields): string
     {
         $result = [];
         foreach ($fields as $label => $value) {
@@ -32,7 +32,7 @@ class Ltsv extends AbstractType
         return implode("\t", $result) . "\n";
     }
 
-    public function foot()
+    public function foot(): string
     {
         return '';
     }

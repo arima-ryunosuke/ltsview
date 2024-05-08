@@ -23,11 +23,8 @@ class LogrepCommand extends Command
 
     private static $STDIN = STDIN;
 
-    /** @var InputInterface */
-    private $input;
-
-    /** @var OutputInterface */
-    private $output;
+    private InputInterface  $input;
+    private OutputInterface $output;
 
     private $cache;
 
@@ -263,7 +260,7 @@ EOT
         return 0;
     }
 
-    private function from()
+    private function from(): \Generator
     {
         // shoddy emulation glob (https://www.php.net/manual/function.glob.php)
         $this->cache['from'] ??= (function () {
@@ -383,7 +380,7 @@ EOT
         }
     }
 
-    private function column($header)
+    private function column(array $header): array
     {
         // pattern1: column:constant
         // pattern2: column:`expression`
@@ -419,7 +416,7 @@ EOT
         return $this->cache['column'];
     }
 
-    private function select($fields)
+    private function select(array $fields): array
     {
         $result = [];
 
@@ -438,7 +435,7 @@ EOT
         return $result;
     }
 
-    private function distinct($fields)
+    private function distinct(array $fields): bool
     {
         if (!$this->input->hasParameterOption('--distinct')) {
             return true;
@@ -458,7 +455,7 @@ EOT
         return true;
     }
 
-    private function where($fields)
+    private function where(array $fields): bool
     {
         $this->cache['where'] ??= (function () {
             if ($this->input->getOption('where') !== null) {
@@ -474,7 +471,7 @@ EOT
         return $this->cache['where']($fields);
     }
 
-    private function whereBelow($fields)
+    private function whereBelow(array $fields): bool
     {
         $this->cache['below-where'] ??= (function () {
             if ($this->input->getOption('below-where') !== null) {
@@ -490,7 +487,7 @@ EOT
         return $this->cache['below-where']($fields);
     }
 
-    private function orderBy(&$buffer, $allindex)
+    private function orderBy(array &$buffer, int $allindex)
     {
         if (!$this->input->hasParameterOption('--order-by')) {
             return;
@@ -538,7 +535,7 @@ EOT
         });
     }
 
-    private function groupBy(&$buffer, $colindex, $allindex)
+    private function groupBy(array &$buffer, int $colindex, int $allindex)
     {
         if (!$this->input->hasParameterOption('--group-by')) {
             return;
@@ -584,7 +581,7 @@ EOT
         }
     }
 
-    private function offset($index)
+    private function offset(int $index): bool
     {
         $this->cache['offset'] ??= (int) $this->input->getOption('offset');
 
@@ -595,7 +592,7 @@ EOT
         return $index > $this->cache['offset'];
     }
 
-    private function limit($count)
+    private function limit(int $count): bool
     {
         $this->cache['limit'] ??= (int) $this->input->getOption('limit');
 
@@ -606,7 +603,7 @@ EOT
         return $count < $this->cache['limit'];
     }
 
-    private function expression($expression)
+    private function expression(string $expression)
     {
         $expression = trim($expression);
         if (!strlen($expression)) {
@@ -636,7 +633,7 @@ EOT
         }
     }
 
-    private function evaluate($expression)
+    private function evaluate(string $expression)
     {
         return evaluate("return static function() {
             extract(func_get_arg(0));

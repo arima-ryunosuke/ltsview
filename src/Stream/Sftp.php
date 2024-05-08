@@ -6,15 +6,20 @@ use ryunosuke\ltsv\Traits\User;
 use function ryunosuke\ltsv\uri_build;
 use function ryunosuke\ltsv\uri_parse;
 
+/**
+ * @method parse_uri(string $path)
+ * @method parse_config(?string $filename = null)
+ * @method resolve_host(array $original, array $sshconfig)
+ */
 class Sftp extends \phpseclib3\Net\SFTP\Stream
 {
     use User;
 
-    private static $contexts = [];
+    public static array $contexts = [];
 
     protected function parse_path($path)
     {
-        $parts = $this->_parse_path($path);
+        $parts = $this->_parse_uri($path);
         $origin = sprintf('%s://%s:%s@%s:%d', $parts['scheme'], $parts['user'], $parts['pass'], $parts['host'], $parts['port']);
         $this->context = self::$contexts[$origin] ??= stream_context_create([
             $parts['scheme'] => [
@@ -26,7 +31,7 @@ class Sftp extends \phpseclib3\Net\SFTP\Stream
         return parent::parse_path(uri_build($parts));
     }
 
-    function _parse_path($path)
+    protected function _parse_uri(string $path): array
     {
         // original parsed
         $parts = uri_parse($path, [
@@ -72,7 +77,7 @@ class Sftp extends \phpseclib3\Net\SFTP\Stream
         return $parts;
     }
 
-    function _parse_config($filename = null)
+    protected function _parse_config(?string $filename = null): array
     {
         $filename = $filename ?? $this->getUser()['dir'] . '/.ssh/config';
         if (!file_exists($filename)) {
@@ -100,7 +105,7 @@ class Sftp extends \phpseclib3\Net\SFTP\Stream
         return $hosts;
     }
 
-    function _resolve_host($original, $sshconfig)
+    protected function _resolve_host(array $original, array $sshconfig): array
     {
         foreach ($sshconfig as $key => $config) {
             if (fnmatch($key, $original['host'])) {

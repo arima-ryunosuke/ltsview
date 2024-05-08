@@ -4,19 +4,19 @@ namespace ryunosuke\ltsv\Type;
 
 class JsonLine extends AbstractType
 {
-    private $meta = '';
+    private string $meta = '';
 
-    public function parse($string)
+    public function parse(string $string): ?array
     {
         return json_decode($string, true);
     }
 
-    public function head($column)
+    public function head(array $columns): string
     {
         return '';
     }
 
-    public function meta($file, $n)
+    public function meta(string $file, int $n): string
     {
         if ($this->comment_mode) {
             $this->meta = "$file:$n";
@@ -24,7 +24,7 @@ class JsonLine extends AbstractType
         return '';
     }
 
-    public function body($fields)
+    public function body(array $fields): string
     {
         end($fields);
         $lastkey = key($fields);
@@ -43,7 +43,7 @@ class JsonLine extends AbstractType
         return "{" . implode("", $result) . "}\n";
     }
 
-    public function foot()
+    public function foot(): string
     {
         return '';
     }

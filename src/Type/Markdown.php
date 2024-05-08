@@ -4,7 +4,7 @@ namespace ryunosuke\ltsv\Type;
 
 class Markdown extends AbstractType
 {
-    private function _line($column, $padstr, $color)
+    private function _line(array $column, string $padstr, string $color): string
     {
         $result = [];
         foreach ($column as $col) {
@@ -16,25 +16,25 @@ class Markdown extends AbstractType
         return "| " . implode(' | ', $result) . " |\n";
     }
 
-    public function head($column)
+    public function head(array $columns): string
     {
         if ($this->comment_mode) {
-            return $this->_line($column, ' ', 'comment') . $this->_line(array_fill(0, count($column), '-'), '-', '');
+            return $this->_line($columns, ' ', 'comment') . $this->_line(array_fill(0, count($columns), '-'), '-', '');
         }
         return '';
     }
 
-    public function meta($file, $n)
+    public function meta(string $file, int $n): string
     {
         return '';
     }
 
-    public function body($fields)
+    public function body(array $fields): string
     {
         return $this->_line($fields, ' ', 'value');
     }
 
-    public function foot()
+    public function foot(): string
     {
         return '';
     }
