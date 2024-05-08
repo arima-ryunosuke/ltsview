@@ -17,6 +17,7 @@ class Json extends AbstractType
         if ($this->comment_mode) {
             $this->meta = "$file:$n";
         }
+        return '';
     }
 
     public function body($fields)

@@ -4,13 +4,17 @@ namespace ryunosuke\ltsv\Type;
 
 class Yaml extends AbstractType
 {
-    public function head($column) { }
+    public function head($column)
+    {
+        return '';
+    }
 
     public function meta($file, $n)
     {
         if ($this->comment_mode) {
             return $this->colorComment("# $file:$n\n");
         }
+        return '';
     }
 
     public function body($fields)
@@ -35,5 +39,8 @@ class Yaml extends AbstractType
         }
     }
 
-    public function foot() { }
+    public function foot()
+    {
+        return '';
+    }
 }

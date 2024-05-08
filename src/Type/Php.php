@@ -14,6 +14,7 @@ class Php extends AbstractType
         if ($this->comment_mode) {
             return $this->colorComment("    // $file:$n\n");
         }
+        return '';
     }
 
     public function body($fields)

@@ -21,14 +21,21 @@ class Markdown extends AbstractType
         if ($this->comment_mode) {
             return $this->_line($column, ' ', 'comment') . $this->_line(array_fill(0, count($column), '-'), '-', '');
         }
+        return '';
     }
 
-    public function meta($file, $n) { }
+    public function meta($file, $n)
+    {
+        return '';
+    }
 
     public function body($fields)
     {
         return $this->_line($fields, ' ', 'value');
     }
 
-    public function foot() { }
+    public function foot()
+    {
+        return '';
+    }
 }

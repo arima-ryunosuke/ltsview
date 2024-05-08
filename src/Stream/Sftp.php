@@ -3,8 +3,8 @@
 namespace ryunosuke\ltsv\Stream;
 
 use ryunosuke\ltsv\Traits\User;
-use function ryunosuke\ltsv\build_uri;
-use function ryunosuke\ltsv\parse_uri;
+use function ryunosuke\ltsv\uri_build;
+use function ryunosuke\ltsv\uri_parse;
 
 class Sftp extends \phpseclib3\Net\SFTP\Stream
 {
@@ -23,13 +23,13 @@ class Sftp extends \phpseclib3\Net\SFTP\Stream
                 'privkey'  => $parts['key'] ?? null,
             ],
         ]);
-        return parent::parse_path(build_uri($parts));
+        return parent::parse_path(uri_build($parts));
     }
 
     function _parse_path($path)
     {
         // original parsed
-        $parts = parse_uri($path, [
+        $parts = uri_parse($path, [
             'user' => '',
             'pass' => '',
         ]);

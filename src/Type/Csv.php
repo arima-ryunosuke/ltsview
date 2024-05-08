@@ -24,14 +24,21 @@ class Csv extends AbstractType
         if ($this->comment_mode) {
             return $this->colorComment(implode($this->separator, $column)) . "\n";
         }
+        return '';
     }
 
-    public function meta($file, $n) { }
+    public function meta($file, $n)
+    {
+        return '';
+    }
 
     public function body($fields)
     {
         return $this->colorValue(implode($this->separator, $fields)) . "\n";
     }
 
-    public function foot() { }
+    public function foot()
+    {
+        return '';
+    }
 }

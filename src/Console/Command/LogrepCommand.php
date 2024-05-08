@@ -11,7 +11,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use function ryunosuke\ltsv\evaluate;
 use function ryunosuke\ltsv\ini_sets;
-use function ryunosuke\ltsv\path_info;
+use function ryunosuke\ltsv\path_parse;
 use function ryunosuke\ltsv\quoteexplode;
 use function ryunosuke\ltsv\split_noempty;
 use function ryunosuke\ltsv\var_export2;
@@ -149,7 +149,7 @@ EOT
         if ($output === 'auto') {
             $type = reset($this->cache['from'])['type'] ?? null;
             if ($type === null && !$header) {
-                return;
+                return 255;
             }
         }
         $type ??= AbstractType::instance($output, [
@@ -259,6 +259,8 @@ EOT
         }
 
         $this->output->write($type->foot());
+
+        return 0;
     }
 
     private function from()
@@ -282,7 +284,7 @@ EOT
             };
             $froms = [];
             foreach ((array) ($this->input->getArgument('from') ?: '-') as $from) {
-                $pathinfo = path_info($from);
+                $pathinfo = path_parse($from);
 
                 if ($from === '-' || file_exists($from)) {
                     $froms[] = [
@@ -297,7 +299,7 @@ EOT
                             continue;
                         }
                         if (fnmatch($pathinfo['basename'], $entry)) {
-                            $pathinfo2 = path_info($entry);
+                            $pathinfo2 = path_parse($entry);
                             $froms[] = [
                                 'path'   => $pathinfo['dirname'] . DIRECTORY_SEPARATOR . $entry,
                                 'filter' => $filter($pathinfo2['extensions']),

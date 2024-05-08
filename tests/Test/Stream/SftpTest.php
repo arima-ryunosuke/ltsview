@@ -8,7 +8,7 @@ use phpseclib3\System\SSH\Agent;
 use ryunosuke\ltsv\Stream\Sftp;
 use function ryunosuke\ltsv\array_unset;
 use function ryunosuke\ltsv\file_set_contents;
-use function ryunosuke\ltsv\parse_uri;
+use function ryunosuke\ltsv\uri_parse;
 
 class SftpTest extends AbstractTestCase
 {
@@ -23,7 +23,7 @@ class SftpTest extends AbstractTestCase
         }
 
         /** @noinspection PhpUndefinedConstantInspection */
-        $this->urlParts = parse_uri(SFTP);
+        $this->urlParts = uri_parse(SFTP);
         Sftp::register('sftp');
 
         $this->identity_file = sys_get_temp_dir() . '/dummy.key';

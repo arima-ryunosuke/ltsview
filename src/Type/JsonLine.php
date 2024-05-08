@@ -11,13 +11,17 @@ class JsonLine extends AbstractType
         return json_decode($string, true);
     }
 
-    public function head($column) { }
+    public function head($column)
+    {
+        return '';
+    }
 
     public function meta($file, $n)
     {
         if ($this->comment_mode) {
             $this->meta = "$file:$n";
         }
+        return '';
     }
 
     public function body($fields)
@@ -39,5 +43,8 @@ class JsonLine extends AbstractType
         return "{" . implode("", $result) . "}\n";
     }
 
-    public function foot() { }
+    public function foot()
+    {
+        return '';
+    }
 }

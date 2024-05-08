@@ -11,9 +11,15 @@ class Ltsv extends AbstractType
         return str_array(explode("\t", $string), ':', true);
     }
 
-    public function head($column) { }
+    public function head($column)
+    {
+        return '';
+    }
 
-    public function meta($file, $n) { }
+    public function meta($file, $n)
+    {
+        return '';
+    }
 
     public function body($fields)
     {
@@ -26,5 +32,8 @@ class Ltsv extends AbstractType
         return implode("\t", $result) . "\n";
     }
 
-    public function foot() { }
+    public function foot()
+    {
+        return '';
+    }
 }
