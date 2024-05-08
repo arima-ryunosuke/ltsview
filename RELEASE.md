@@ -20,6 +20,14 @@
 
 - no todo
 
+## 2.1.0
+
+- [change] php>=8.0
+- [*fixbug] CSV が本当の CSV じゃなかったので修正
+  - CSV の出力形式が変わっている
+- [*change] タイプヒント追加
+  - AbstractType を継承して独自型を使っている場合に非互換
+
 ## 2.0.0
 
 - [*change] ltsview 改め logrep
