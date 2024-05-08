@@ -26,11 +26,11 @@ abstract class AbstractType
             case 'yml':
                 return new Yaml($option);
             case 'csv':
-                return new Csv($option + ['separator' => ","]);
+                return new Csv($option + ['separator' => ",", 'enclosure' => '"']);
             case 'ssv':
-                return new Csv($option + ['separator' => " "]);
+                return new Csv($option + ['separator' => " ", 'enclosure' => '']);
             case 'tsv':
-                return new Csv($option + ['separator' => "\t"]);
+                return new Csv($option + ['separator' => "\t", 'enclosure' => '']);
             case 'markdown':
             case 'md':
                 return new Markdown($option);
