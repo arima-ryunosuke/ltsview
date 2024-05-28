@@ -2,13 +2,16 @@
 
 namespace ryunosuke\ltsv\Type;
 
-use function ryunosuke\ltsv\str_array;
-
 class Ltsv extends AbstractType
 {
     public function parse(string $string): ?array
     {
-        return str_array(explode("\t", $string), ':', true);
+        $result = [];
+        foreach (explode("\t", $string) as $line) {
+            $parts = explode(':', $line, 2);
+            $result[trim($parts[0])] = trim($parts[1] ?? '');
+        }
+        return $result;
     }
 
     public function head(array $columns): string
