@@ -369,6 +369,10 @@ EOT
                         })($itype, $line, $from['ext']);
 
                         $item = $from['type']->parse($line);
+                        if ($item === null) {
+                            $this->output->writeln(sprintf('<error>%s:%d is not %s line.</error>', $from['path'], $n, $from['ext']));
+                            continue;
+                        }
                     }
                     // for detect header
                     if ($seq === 0) {

@@ -194,6 +194,14 @@ colA:345	colC:fu ga yo7
         ], eval("return $result;"), "Actual:\n$result");
     }
 
+    function test_from_error()
+    {
+        $result = $this->runApp([
+            'from' => glob(__DIR__ . '/_files/invalid.jsonl'),
+        ]);
+        $this->assertStringContainsString(':2 is not jsonl line', $result);
+    }
+
     function test_select()
     {
         $result = $this->runApp([
