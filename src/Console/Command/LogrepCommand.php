@@ -9,6 +9,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use function ryunosuke\ltsv\array_any;
 use function ryunosuke\ltsv\evaluate;
 use function ryunosuke\ltsv\ini_sets;
 use function ryunosuke\ltsv\path_parse;
@@ -71,8 +72,10 @@ class LogrepCommand extends Command
                 - e.g. order multi column:   --order-by '-colA, colB'
                 - e.g. order php expression: --order-by '`\$colA + \$colB`'
             "),
-            new InputOption('group-by', 'g', InputOption::VALUE_REQUIRED, "Specify group column and aggregate column. Grouping will be executed after all finished. $bufferingMode
-                - e.g. group colA: --group-by 'colA, countB:`count(\$colB)`, minC:`min(\$colC)`'
+            new InputOption('group-by', 'g', InputOption::VALUE_REQUIRED, "Specify group column. Can use all php functions and use virtual column. Grouping will be executed after all finished. $bufferingMode
+                - e.g. group colA:           --group-by 'colA'
+                - e.g. group php expression: --group-by '`substr(\$colA, 0, 10)`'
+                - e.g. group virtual:        --select 'subcolA:`substr(\$colA, 0, 10)`' --group-by 'subcolA'
             "),
             new InputOption('offset', 'o', InputOption::VALUE_REQUIRED, "Specify skip count."),
             new InputOption('limit', 'l', InputOption::VALUE_REQUIRED, "Specify take count."),
@@ -140,7 +143,7 @@ EOT
         $below = (int) $this->input->getOption('below');
 
         $from = $this->from();
-        $header = (array) $from->current();
+        $header = $from->current();
         $from->next();
 
         if ($output === 'auto') {
@@ -157,8 +160,13 @@ EOT
 
         $this->output->write($type->head(array_keys($this->column($header))));
 
+        // force group-by
+        if (!strlen($this->input->getOption('group-by')) && array_any($this->cache['group-column'], fn($c) => $c)) {
+            $this->input->setOption('group-by', '0');
+        }
+
         // distinct/orderBy/groupBy requires buffering
-        if ($this->input->hasParameterOption('--distinct') || $this->input->hasParameterOption('--order-by') || $this->input->hasParameterOption('--group-by')) {
+        if ($this->input->hasParameterOption('--distinct') || strlen($this->input->getOption('order-by')) || strlen($this->input->getOption('group-by'))) {
             $buffer = [];
             $lastindex = -1;
             while ($from->valid()) {
@@ -193,7 +201,7 @@ EOT
             }
 
             $this->orderBy($buffer, 4);
-            $this->groupBy($buffer, 3, 4);
+            $this->groupBy($buffer, 4, 3);
 
             $index = $count = 0;
             foreach ($buffer as $it) {
@@ -376,7 +384,7 @@ EOT
                     }
                     // for detect header
                     if ($seq === 0) {
-                        yield array_keys($item);
+                        yield $item;
                     }
                     yield [$seq++, $from['path'], $n, $item];
                 }
@@ -393,6 +401,7 @@ EOT
         // pattern5: *
         // pattern6: ~ignorecolumn
         // pattern7: simplecolumn
+        $this->cache['group-column'] ??= [];
         $this->cache['column'] ??= (function ($header) {
             $column = [];
             $ignore = [];
@@ -402,10 +411,21 @@ EOT
                     continue;
                 }
                 if (is_array($select)) {
+                    foreach ($select as $label => $expr) {
+                        if ($expr instanceof \Closure) {
+                            try {
+                                $expr($header);
+                            }
+                            catch (\TypeError) {
+                                $this->cache['group-column'][$label] = true;
+                                break;
+                            }
+                        }
+                    }
                     $column = array_replace($column, $select);
                 }
                 elseif ($select === '*') {
-                    $column = array_fill_keys($header, null);
+                    $column = array_fill_keys(array_keys($header), null);
                 }
                 elseif ($select[0] === '~') {
                     $ignore[ltrim($select, '~')] = true;
@@ -414,7 +434,7 @@ EOT
                     $column[$select] = null;
                 }
             }
-            return array_diff_key($column ?: array_fill_keys($header, null), $ignore);
+            return array_diff_key($column ?: array_fill_keys(array_keys($header), null), $ignore);
         })($header);
 
         return $this->cache['column'];
@@ -429,7 +449,12 @@ EOT
                 $result[$column] = $fields[$column] ?? null;
             }
             elseif ($mapper instanceof \Closure) {
-                $result[$column] = $mapper($fields);
+                if ($this->cache['group-column'][$column] ?? false) {
+                    $result[$column] = $mapper; // for group by
+                }
+                else {
+                    $result[$column] = $mapper($fields);
+                }
             }
             else {
                 $result[$column] = $mapper;
@@ -493,7 +518,7 @@ EOT
 
     private function orderBy(array &$buffer, int $allindex)
     {
-        if (!$this->input->hasParameterOption('--order-by')) {
+        if (!strlen($this->input->getOption('order-by'))) {
             return;
         }
 
@@ -539,32 +564,36 @@ EOT
         });
     }
 
-    private function groupBy(array &$buffer, int $colindex, int $allindex)
+    private function groupBy(array &$buffer, int $allindex, int $colindex)
     {
-        if (!$this->input->hasParameterOption('--group-by')) {
+        if (!strlen($this->input->getOption('group-by'))) {
             return;
         }
 
-        $this->cache['group-by'] ??= (function () {
-            $group = [
-                'key' => [],
-                'val' => [],
-            ];
-            foreach (quoteexplode(',', $this->input->getOption('group-by'), null, '`') as $col) {
-                $col = $this->expression($col);
+        $this->cache['group-by'] ??= function ($line) {
+            $keys = [];
+            foreach (quoteexplode(',', $this->input->getOption('group-by'), null, '`') as $by) {
+                $col = $this->expression($by);
                 if (is_array($col)) {
-                    $group['val'] = $col + $group['val'];
+                    foreach ($col as $c => $val) {
+                        if ($val instanceof \Closure) {
+                            $keys[$c] = $val($line);
+                        }
+                        else {
+                            throw new \InvalidArgumentException("group by doesn't allow alias($by)");
+                        }
+                    }
                 }
                 elseif (is_string($col)) {
-                    $group['key'][$col] = null;
+                    $keys[$col] = $line[$col] ?? null;
                 }
             }
-            return $group;
-        })();
+            return $keys;
+        };
 
         $groups = [];
         foreach ($buffer as $line) {
-            $key = serialize(array_intersect_key($line[$allindex], $this->cache['group-by']['key']));
+            $key = serialize($this->cache['group-by']($line[$allindex]));
             $groups[$key][] = $line;
         }
 
@@ -578,8 +607,10 @@ EOT
                 $fields[$c] = array_column($values, $c);
             }
 
-            foreach ($this->cache['group-by']['val'] as $col => $val) {
-                $line[$colindex][$col] = $val($fields);
+            foreach ($line[$colindex] as $c => $v) {
+                if ($v instanceof \Closure) {
+                    $line[$colindex][$c] = $v($fields);
+                }
             }
             $buffer[] = $line;
         }
