@@ -28,6 +28,7 @@ abstract class AbstractTestCase extends \ryunosuke\test\AbstractTestCase
             'comment' => $this->meta,
             'compact' => false,
             'color'   => false,
+            'table'   => 't_hoge',
         ]);
     }
 
@@ -39,6 +40,10 @@ abstract class AbstractTestCase extends \ryunosuke\test\AbstractTestCase
 
     function test_syntax()
     {
+        if (!$this->decoder) {
+            $this->markTestSkipped();
+        }
+
         $fields = ['a' => 'A', 'b' => 'B', 'c' => 'C'];
         $buffer = '';
         $buffer .= $this->type->head(array_keys($fields));

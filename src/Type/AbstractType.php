@@ -31,6 +31,8 @@ abstract class AbstractType
                 return new Csv($option + ['separator' => " ", 'enclosure' => '']);
             case 'tsv':
                 return new Csv($option + ['separator' => "\t", 'enclosure' => '']);
+            case 'sql':
+                return new Sql($option);
             case 'markdown':
             case 'md':
                 return new Markdown($option);

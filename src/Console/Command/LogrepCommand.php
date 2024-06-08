@@ -46,7 +46,7 @@ class LogrepCommand extends Command
                 - e.g. sftp protocol4: sftp://sshconfig-host/path/to/log (using ssh config)
             "),
             new InputOption('input', 'i', InputOption::VALUE_REQUIRED, "Specify input format[auto|jsonl|ltsv|csv|ssv|tsv].", 'auto'),
-            new InputOption('output', 'f', InputOption::VALUE_REQUIRED, "Specify output format[auto|yaml|json|jsonl|ltsv|csv|ssv|tsv|md|php].", 'auto'),
+            new InputOption('output', 'f', InputOption::VALUE_REQUIRED, "Specify output format[auto|yaml|json|jsonl|ltsv|csv|ssv|tsv|sql|md|php].", 'auto'),
             new InputOption('regex', 'e', InputOption::VALUE_REQUIRED, "Specify regex for not lstv file (only named subpattern).
                 - e.g. combined log: --regex '/^(?<host>.*?) (.*?) (.*?) \[(?<time>.*?)\] \"(?<request>.*?)\" (?<status>.*?) (?<size>.*?) \"(?<referer>.*?)\" \"(?<uagent>.*?)\"$/'
                 - e.g. preset file:  --regex ./combined.txt
@@ -82,6 +82,7 @@ class LogrepCommand extends Command
             new InputOption('require', 'r', InputOption::VALUE_REQUIRED, "Specify require file.php."),
             new InputOption('below', 'b', InputOption::VALUE_REQUIRED, "Specify count below the matched where (keeping original order)."),
             new InputOption('below-where', 'W', InputOption::VALUE_REQUIRED, "Specify below filter statement."),
+            new InputOption('table', null, InputOption::VALUE_REQUIRED, "Specify tablename when SQL output."),
             new InputOption('compact', null, InputOption::VALUE_NONE, "Switch compact output."),
             new InputOption('nocomment', 'C', InputOption::VALUE_NONE, "Switch comment output."),
             new InputOption('nocolor', 'H', InputOption::VALUE_NONE, "Switch color output."),
@@ -156,6 +157,7 @@ EOT
             'comment' => !$this->input->getOption('nocomment'),
             'compact' => !!$this->input->getOption('compact'),
             'color'   => !$this->input->getOption('nocolor'),
+            'table'   => $this->input->getOption('table') ?: "tablename",
         ]);
 
         $this->output->write($type->head(array_keys($this->column($header))));
