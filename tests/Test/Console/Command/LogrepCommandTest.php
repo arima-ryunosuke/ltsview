@@ -44,22 +44,34 @@ class LogrepCommandTest extends AbstractTestCase
 
     function test_all()
     {
-        $result = $this->runApp([
+        $result1 = $this->runApp([
             'from'        => [__DIR__ . '/_files/log1.jsonl', __DIR__ . '/_files/log2.ltsv'],
-            '--select'    => 'colA, colC',
+            '--select'    => 'colA, colC@strtoupper',
             '--where'     => '$colA < 600',
+            '--group-by'  => 'colA, `$colB[0]`',
             '--offset'    => 1,
             '--limit'     => 6,
             '--output'    => 'ltsv',
             '--nocomment' => false,
         ]);
-        $this->assertEquals('colA:456	colC:ho ge ra2
-colA:123	colC:fu ga yo1
-colA:456	colC:fu ga yo2
-colA:234	colC:fu ga yo4
-colA:567	colC:fu ga yo5
-colA:345	colC:fu ga yo7
-', $result);
+        $result2 = $this->runApp([
+            '--config' => __DIR__ . '/_files/config.php',
+        ], false);
+
+        $this->assertEquals($result1, $result2);
+        $this->assertEquals(<<<LTSV
+        colA:456	colC:HO GE RA2
+        colA:123	colC:FU GA YO1
+        colA:456	colC:FU GA YO2
+        colA:234	colC:FU GA YO4
+        colA:567	colC:FU GA YO5
+        colA:345	colC:FU GA YO7
+        
+        LTSV, $result1);
+
+        $this->assertException('is not exists', fn() => $this->runApp([
+            '--config' => 'notfound-config.php',
+        ]));
     }
 
     function test_from()
@@ -652,11 +664,6 @@ colA:345	colC:fu ga yo7
         $this->assertSame([
             ['countA' => 35, 'concatA' => '123,456,789,234,567,890,345,678,901,999,8,1,11,4,7,5,10,2,9,6,3,a,A'],
         ], eval("return $result;"), "Actual:\n$result");
-
-        $this->assertException('allow', fn() => $this->runApp([
-            'from'       => [__DIR__ . '/_files/log*.ltsv'],
-            '--group-by' => 'alias:colX',
-        ]));
     }
 
     function test_offsetAndLimit()

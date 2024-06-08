@@ -31,11 +31,12 @@ abstract class AbstractTestCase extends \ryunosuke\test\AbstractTestCase
      * @param array $inputArray
      * @return string
      */
-    protected function runApp($inputArray)
+    protected function runApp($inputArray, $useDefault = true)
     {
-        $inputArray = [
-                'command' => $this->commandName,
-            ] + $inputArray + $this->defaultArgs;
+        $inputArray = ['command' => $this->commandName] + $inputArray;
+        if ($useDefault) {
+            $inputArray += $this->defaultArgs;
+        }
 
         $input = new ArrayInput($inputArray);
         $output = new BufferedOutput();

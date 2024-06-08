@@ -2,6 +2,7 @@
 
 namespace ryunosuke\ltsv\Console\Command;
 
+use ryunosuke\ltsv\Console\DefaultableInput;
 use ryunosuke\ltsv\Stream\Sftp;
 use ryunosuke\ltsv\Type\AbstractType;
 use Symfony\Component\Console\Command\Command;
@@ -24,8 +25,8 @@ class LogrepCommand extends Command
 
     private static $STDIN = STDIN;
 
-    private InputInterface  $input;
-    private OutputInterface $output;
+    private DefaultableInput $input;
+    private OutputInterface  $output;
 
     private $cache;
 
@@ -45,6 +46,7 @@ class LogrepCommand extends Command
                 - e.g. sftp protocol3: sftp://user@host/path/to/log (using ssh agent)
                 - e.g. sftp protocol4: sftp://sshconfig-host/path/to/log (using ssh config)
             "),
+            new InputOption('config', 'c', InputOption::VALUE_REQUIRED, "Specify config file. config file can set default values for all arguments and options by php."),
             new InputOption('input', 'i', InputOption::VALUE_REQUIRED, "Specify input format[auto|jsonl|ltsv|csv|ssv|tsv].", 'auto'),
             new InputOption('output', 'f', InputOption::VALUE_REQUIRED, "Specify output format[auto|yaml|json|jsonl|ltsv|csv|ssv|tsv|sql|md|php].", 'auto'),
             new InputOption('regex', 'e', InputOption::VALUE_REQUIRED, "Specify regex for not lstv file (only named subpattern).
@@ -115,7 +117,15 @@ EOT
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->input = $input;
+        $defaults = [];
+        if (strlen($configFile = $input->getOption('config'))) {
+            if (!file_exists($configFile)) {
+                throw new \InvalidArgumentException("'$configFile' is not exists.");
+            }
+            $defaults = require $configFile;
+        }
+
+        $this->input = new DefaultableInput($input, $defaults);
         $this->output = $output;
 
         $this->output->writeln(var_export2($this->input->getArguments(), true), OutputInterface::VERBOSITY_DEBUG);
@@ -163,12 +173,12 @@ EOT
         $this->output->write($type->head(array_keys($this->column($header))));
 
         // force group-by
-        if (!strlen($this->input->getOption('group-by')) && array_any($this->cache['group-column'], fn($c) => $c)) {
+        if ($this->input->isEmptyOption('group-by') && array_any($this->cache['group-column'], fn($c) => $c)) {
             $this->input->setOption('group-by', '0');
         }
 
         // distinct/orderBy/groupBy requires buffering
-        if ($this->input->hasParameterOption('--distinct') || strlen($this->input->getOption('order-by')) || strlen($this->input->getOption('group-by'))) {
+        if ($this->input->hasParameterOption('--distinct') || !$this->input->isEmptyOption('order-by') || !$this->input->isEmptyOption('group-by')) {
             $buffer = [];
             $lastindex = -1;
             while ($from->valid()) {
@@ -178,7 +188,7 @@ EOT
                 $columns = $this->select($fields);
                 $allcols = $columns + $fields;
 
-                $matched = $this->where($allcols);
+                $matched = $this->where($allcols, '');
                 $belowed = !($below === 0 || $lastindex === -1 || ($lastindex + $below < $seq));
                 if ($matched) {
                     $lastindex = $seq;
@@ -186,7 +196,7 @@ EOT
                 elseif (!$belowed) {
                     continue;
                 }
-                elseif ($belowed && !$this->whereBelow($allcols)) {
+                elseif ($belowed && !$this->where($allcols, 'below')) {
                     continue;
                 }
 
@@ -240,7 +250,7 @@ EOT
                 $columns = $this->select($fields);
                 $allcols = $columns + $fields;
 
-                $matched = $this->where($allcols);
+                $matched = $this->where($allcols, '');
                 $belowed = !($below === 0 || $lastindex === -1 || ($lastindex + $below < $seq));
                 if ($matched) {
                     $lastindex = $seq;
@@ -248,7 +258,7 @@ EOT
                 elseif (!$belowed) {
                     continue;
                 }
-                elseif ($belowed && !$this->whereBelow($allcols)) {
+                elseif ($belowed && !$this->where($allcols, 'below')) {
                     continue;
                 }
 
@@ -405,35 +415,33 @@ EOT
         // pattern7: simplecolumn
         $this->cache['group-column'] ??= [];
         $this->cache['column'] ??= (function ($header) {
+            $select = $this->input->getOption('select');
+            if (!is_array($select)) {
+                $select = $this->expression((string) $select);
+            }
             $column = [];
             $ignore = [];
-            foreach (quoteexplode(',', $this->input->getOption('select'), null, '`') as $select) {
-                $select = $this->expression($select);
-                if ($select === null) {
-                    continue;
-                }
-                if (is_array($select)) {
-                    foreach ($select as $label => $expr) {
-                        if ($expr instanceof \Closure) {
-                            try {
-                                $expr($header);
-                            }
-                            catch (\TypeError) {
-                                $this->cache['group-column'][$label] = true;
-                                break;
-                            }
-                        }
+            foreach ($select as $label => $expression) {
+                if ($expression instanceof \Closure) {
+                    try {
+                        $expression($header);
                     }
-                    $column = array_replace($column, $select);
+                    catch (\TypeError) {
+                        $this->cache['group-column'][$label] = true;
+                    }
+                    $column[$label] = $expression;
                 }
-                elseif ($select === '*') {
+                elseif ($expression === '*') {
                     $column = array_fill_keys(array_keys($header), null);
                 }
-                elseif ($select[0] === '~') {
-                    $ignore[ltrim($select, '~')] = true;
+                elseif ($expression[0] === '~') {
+                    $ignore[ltrim($expression, '~')] = true;
+                }
+                elseif (is_int($label)) {
+                    $column[$expression] = null;
                 }
                 else {
-                    $column[$select] = null;
+                    $column[$label] = $expression;
                 }
             }
             return array_diff_key($column ?: array_fill_keys(array_keys($header), null), $ignore);
@@ -486,41 +494,30 @@ EOT
         return true;
     }
 
-    private function where(array $fields): bool
+    private function where(array $fields, string $mode): bool
     {
-        $this->cache['where'] ??= (function () {
-            if ($this->input->getOption('where') !== null) {
-                return $this->evaluate($this->input->getOption('where'));
+        $mode = strlen($mode) ? "$mode-" : '';
+        $this->cache["{$mode}where"] ??= (function ($mode) {
+            if ($this->input->isEmptyOption("{$mode}where")) {
+                return false;
             }
-            return false;
-        })();
+            $where = $this->input->getOption("{$mode}where");
+            if (is_string($where)) {
+                return $this->evaluate($where);
+            }
+            return $where;
+        })($mode);
 
-        if ($this->cache['where'] === false) {
+        if ($this->cache["{$mode}where"] === false) {
             return true;
         }
 
-        return $this->cache['where']($fields);
-    }
-
-    private function whereBelow(array $fields): bool
-    {
-        $this->cache['below-where'] ??= (function () {
-            if ($this->input->getOption('below-where') !== null) {
-                return $this->evaluate($this->input->getOption('below-where'));
-            }
-            return false;
-        })();
-
-        if ($this->cache['below-where'] === false) {
-            return true;
-        }
-
-        return $this->cache['below-where']($fields);
+        return $this->cache["{$mode}where"]($fields);
     }
 
     private function orderBy(array &$buffer, int $allindex)
     {
-        if (!strlen($this->input->getOption('order-by'))) {
+        if ($this->input->isEmptyOption('order-by')) {
             return;
         }
 
@@ -568,26 +565,22 @@ EOT
 
     private function groupBy(array &$buffer, int $allindex, int $colindex)
     {
-        if (!strlen($this->input->getOption('group-by'))) {
+        if ($this->input->isEmptyOption('group-by')) {
             return;
         }
 
         $this->cache['group-by'] ??= function ($line) {
             $keys = [];
-            foreach (quoteexplode(',', $this->input->getOption('group-by'), null, '`') as $by) {
-                $col = $this->expression($by);
-                if (is_array($col)) {
-                    foreach ($col as $c => $val) {
-                        if ($val instanceof \Closure) {
-                            $keys[$c] = $val($line);
-                        }
-                        else {
-                            throw new \InvalidArgumentException("group by doesn't allow alias($by)");
-                        }
-                    }
+            $groupBy = $this->input->getOption('group-by');
+            if (!is_array($groupBy)) {
+                $groupBy = $this->expression((string) $groupBy);
+            }
+            foreach ($groupBy as $group => $by) {
+                if ($by instanceof \Closure) {
+                    $keys[$group] = $by($line);
                 }
-                elseif (is_string($col)) {
-                    $keys[$col] = $line[$col] ?? null;
+                else {
+                    $keys[$group] = $line[$by] ?? null;
                 }
             }
             return $keys;
@@ -640,34 +633,38 @@ EOT
         return $count < $this->cache['limit'];
     }
 
-    private function expression(string $expression)
+    private function expression(string $expressions): array
     {
-        $expression = trim($expression);
-        if (!strlen($expression)) {
-            return null;
+        $result = [];
+        foreach (quoteexplode(',', $expressions, null, '`') as $expression) {
+            $expression = trim($expression);
+            if (!strlen($expression)) {
+                continue;
+            }
+            $colon = strpos($expression, ':') !== false;
+            $atmark = strpos($expression, '@') !== false;
+            $backq = strpos($expression, '`') !== false;
+            if ($colon && !$backq) {
+                [$label, $expr] = array_map('trim', explode(':', $expression, 2));
+                $result[$label] = $expr;
+            }
+            elseif ($colon && $backq) {
+                [$label, $expr] = array_map('trim', explode(':', $expression, 2));
+                $result[$label] = $this->evaluate(trim($expr, '`'));
+            }
+            elseif ($atmark && !$backq) {
+                [$label, $expr] = array_map('trim', explode('@', $expression, 2));
+                $result[$label] = $this->evaluate("$expr(\$$label)");
+            }
+            elseif ($backq) {
+                $label = $expression = trim($expression, '`');
+                $result[$label] = $this->evaluate($expression);
+            }
+            else {
+                $result[] = $expression;
+            }
         }
-        $colon = strpos($expression, ':') !== false;
-        $atmark = strpos($expression, '@') !== false;
-        $backq = strpos($expression, '`') !== false;
-        if ($colon && !$backq) {
-            [$expression, $expr] = array_map('trim', explode(':', $expression, 2));
-            return [$expression => $expr];
-        }
-        elseif ($colon && $backq) {
-            [$expression, $expr] = array_map('trim', explode(':', $expression, 2));
-            return [$expression => $this->evaluate(trim($expr, '`'))];
-        }
-        elseif ($atmark && !$backq) {
-            [$expression, $expr] = array_map('trim', explode('@', $expression, 2));
-            return [$expression => $this->evaluate("$expr(\$$expression)")];
-        }
-        elseif ($backq) {
-            $expression = trim($expression, '`');
-            return [$expression => $this->evaluate($expression)];
-        }
-        else {
-            return $expression;
-        }
+        return $result;
     }
 
     private function evaluate(string $expression)
