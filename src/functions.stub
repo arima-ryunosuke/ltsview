@@ -340,6 +340,196 @@ if (!function_exists('ryunosuke\\ltsv\\array_all')) {
     }
 }
 
+assert(!function_exists('ryunosuke\\ltsv\\array_any') || (new \ReflectionFunction('ryunosuke\\ltsv\\array_any'))->isUserDefined());
+if (!function_exists('ryunosuke\\ltsv\\array_any')) {
+    /**
+     * 全要素が false になるなら false を返す（1つでも true なら true を返す）
+     *
+     * $callback が要求するならキーも渡ってくる。
+     *
+     * Example:
+     * ```php
+     * that(array_any([true, true]))->isTrue();
+     * that(array_any([true, false]))->isTrue();
+     * that(array_any([false, false]))->isFalse();
+     * ```
+     *
+     * @package ryunosuke\Functions\Package\array
+     *
+     * @param iterable $array 対象配列
+     * @param ?callable $callback 評価クロージャ。 null なら値そのもので評価
+     * @param bool|mixed $default 空配列の場合のデフォルト値
+     * @return bool 全要素が false なら false
+     */
+    function array_any($array, $callback = null, $default = false)
+    {
+        if (is_empty($array)) {
+            return $default;
+        }
+
+        $callback = func_user_func_array($callback);
+
+        $n = 0;
+        foreach ($array as $k => $v) {
+            if ($callback($v, $k, $n++)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+assert(!function_exists('ryunosuke\\ltsv\\array_keys_exist') || (new \ReflectionFunction('ryunosuke\\ltsv\\array_keys_exist'))->isUserDefined());
+if (!function_exists('ryunosuke\\ltsv\\array_keys_exist')) {
+    /**
+     * array_key_exists の複数版
+     *
+     * 指定キーが全て存在するなら true を返す。
+     * 配列ではなく単一文字列を与えても動作する（array_key_exists と全く同じ動作になる）。
+     *
+     * $keys に空を与えると例外を投げる。
+     * $keys に配列を与えるとキーで潜ってチェックする（Example 参照）。
+     *
+     * Example:
+     * ```php
+     * // すべて含むので true
+     * that(array_keys_exist(['a', 'b', 'c'], ['a' => 'A', 'b' => 'B', 'c' => 'C']))->isTrue();
+     * // N は含まないので false
+     * that(array_keys_exist(['a', 'b', 'N'], ['a' => 'A', 'b' => 'B', 'c' => 'C']))->isFalse();
+     * // 配列を与えると潜る（日本語で言えば「a というキーと、x というキーとその中に x1, x2 というキーがあるか？」）
+     * that(array_keys_exist(['a', 'x' => ['x1', 'x2']], ['a' => 'A', 'x' => ['x1' => 'X1', 'x2' => 'X2']]))->isTrue();
+     * ```
+     *
+     * @package ryunosuke\Functions\Package\array
+     *
+     * @param array|string $keys 調べるキー
+     * @param array|\ArrayAccess $array 調べる配列
+     * @return bool 指定キーが全て存在するなら true
+     */
+    function array_keys_exist($keys, $array)
+    {
+        $keys = is_iterable($keys) ? $keys : [$keys];
+        if (is_empty($keys)) {
+            throw new \InvalidArgumentException('$keys is empty.');
+        }
+
+        $is_arrayaccess = $array instanceof \ArrayAccess;
+
+        foreach ($keys as $k => $key) {
+            if (is_array($key)) {
+                // まずそのキーをチェックして
+                if (!array_keys_exist($k, $array)) {
+                    return false;
+                }
+                // あるなら再帰する
+                if (!array_keys_exist($key, $array[$k])) {
+                    return false;
+                }
+            }
+            elseif ($is_arrayaccess) {
+                if (!$array->offsetExists($key)) {
+                    return false;
+                }
+            }
+            elseif (!array_key_exists($key, $array)) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
+assert(!function_exists('ryunosuke\\ltsv\\array_unset') || (new \ReflectionFunction('ryunosuke\\ltsv\\array_unset'))->isUserDefined());
+if (!function_exists('ryunosuke\\ltsv\\array_unset')) {
+    /**
+     * 伏せると同時にその値を返す
+     *
+     * $key に配列を与えると全て伏せて配列で返す。
+     * その場合、$default が活きるのは「全て無かった場合」となる。
+     *
+     * さらに $key が配列の場合に限り、 $default を省略すると空配列として動作する。
+     *
+     * 配列を与えた場合の返り値は与えた配列の順番・キーが活きる。
+     * これを利用すると list の展開の利便性が上がったり、連想配列で返すことができる。
+     *
+     * 同様に、$key にクロージャを与えると、その返り値が true 相当のものを伏せて配列で返す。
+     * callable ではなくクロージャのみ対応する。
+     *
+     * Example:
+     * ```php
+     * $array = ['a' => 'A', 'b' => 'B'];
+     * // ない場合は $default を返す
+     * that(array_unset($array, 'x', 'X'))->isSame('X');
+     * // 指定したキーを返す。そのキーは伏せられている
+     * that(array_unset($array, 'a'))->isSame('A');
+     * that($array)->isSame(['b' => 'B']);
+     *
+     * $array = ['a' => 'A', 'b' => 'B', 'c' => 'C'];
+     * // 配列を与えるとそれらを返す。そのキーは全て伏せられている
+     * that(array_unset($array, ['a', 'b', 'x']))->isSame(['A', 'B']);
+     * that($array)->isSame(['c' => 'C']);
+     *
+     * $array = ['a' => 'A', 'b' => 'B', 'c' => 'C'];
+     * // 配列のキーは返されるキーを表す。順番も維持される
+     * that(array_unset($array, ['x2' => 'b', 'x1' => 'a']))->isSame(['x2' => 'B', 'x1' => 'A']);
+     *
+     * $array = ['hoge' => 'HOGE', 'fuga' => 'FUGA', 'piyo' => 'PIYO'];
+     * // 値に "G" を含むものを返す。その要素は伏せられている
+     * that(array_unset($array, fn($v) => strpos($v, 'G') !== false))->isSame(['hoge' => 'HOGE', 'fuga' => 'FUGA']);
+     * that($array)->isSame(['piyo' => 'PIYO']);
+     * ```
+     *
+     * @package ryunosuke\Functions\Package\array
+     *
+     * @param array|\ArrayAccess $array 配列
+     * @param string|int|array|callable $key 伏せたいキー。配列を与えると全て伏せる。クロージャの場合は true 相当を伏せる
+     * @param mixed $default 無かった場合のデフォルト値
+     * @return mixed 指定したキーの値
+     */
+    function array_unset(&$array, $key, $default = null)
+    {
+        if (is_array($key)) {
+            $result = [];
+            foreach ($key as $rk => $ak) {
+                if (array_keys_exist($ak, $array)) {
+                    $result[$rk] = $array[$ak];
+                    unset($array[$ak]);
+                }
+            }
+            if (!$result) {
+                // 明示的に与えられていないなら [] を使用する
+                if (func_num_args() === 2) {
+                    $default = [];
+                }
+                return $default;
+            }
+            return $result;
+        }
+
+        if ($key instanceof \Closure) {
+            $result = [];
+            $n = 0;
+            foreach ($array as $k => $v) {
+                if ($key($v, $k, $n++)) {
+                    $result[$k] = $v;
+                    unset($array[$k]);
+                }
+            }
+            if (!$result) {
+                return $default;
+            }
+            return $result;
+        }
+
+        if (array_keys_exist($key, $array)) {
+            $result = $array[$key];
+            unset($array[$key]);
+            return $result;
+        }
+        return $default;
+    }
+}
+
 assert(!function_exists('ryunosuke\\ltsv\\arrayize') || (new \ReflectionFunction('ryunosuke\\ltsv\\arrayize'))->isUserDefined());
 if (!function_exists('ryunosuke\\ltsv\\arrayize')) {
     /**
@@ -492,6 +682,53 @@ if (!function_exists('ryunosuke\\ltsv\\object_properties')) {
         }
 
         return $result;
+    }
+}
+
+assert(!function_exists('ryunosuke\\ltsv\\sql_quote') || (new \ReflectionFunction('ryunosuke\\ltsv\\sql_quote'))->isUserDefined());
+if (!function_exists('ryunosuke\\ltsv\\sql_quote')) {
+    /**
+     * ものすごく雑に値をクオートする
+     *
+     * 非常に荒くアドホックに実装しているのでこの関数で得られた値で**実際に実行してはならない**。
+     * あくまでログ出力やデバッグ用途で視認性を高める目的である。
+     *
+     * - null は NULL になる
+     * - 数字はそのまま数字になる
+     * - bool は 0 or 1 になる
+     * - 配列は再帰的にカンマ区切りになる
+     *   - この実装はエラー回避の意味合いが強く、実装は変更される可能性がある
+     * - それ以外は addcslashes される
+     *
+     * Example:
+     * ```php
+     * that(sql_quote(null))->isSame('NULL');
+     * that(sql_quote(123))->isSame(123);
+     * that(sql_quote(true))->isSame(1);
+     * that(sql_quote("hoge"))->isSame("'hoge'");
+     * that(sql_quote([1, 2, 3]))->isSame("1,2,3");
+     * ```
+     *
+     * @package ryunosuke\Functions\Package\database
+     *
+     * @param mixed $value クオートする値
+     * @return mixed クオートされた値
+     */
+    function sql_quote($value)
+    {
+        if ($value === null) {
+            return 'NULL';
+        }
+        if (is_numeric($value)) {
+            return $value;
+        }
+        if (is_bool($value)) {
+            return (int) $value;
+        }
+        if (is_iterable($value) && !is_stringable($value)) {
+            return implode(',', array_map(fn($v) => sql_quote($v), arrayval($value)));
+        }
+        return "'" . addcslashes((string) $value, "\0\e\f\n\r\t\v'\\") . "'";
     }
 }
 
@@ -694,6 +931,186 @@ if (!function_exists('ryunosuke\\ltsv\\func_user_func_array')) {
             }
             return $callback(...array_slice($args, 0, $plength));
         };
+    }
+}
+
+assert(!function_exists('ryunosuke\\ltsv\\arguments') || (new \ReflectionFunction('ryunosuke\\ltsv\\arguments'))->isUserDefined());
+if (!function_exists('ryunosuke\\ltsv\\arguments')) {
+    /**
+     * コマンドライン引数をパースして引数とオプションを返す
+     *
+     * 少しリッチな {@link http://php.net/manual/function.getopt.php getopt} として使える（shell 由来のオプション構文(a:b::)はどうも馴染みにくい）。
+     * ただし「値が必須なオプション」はサポートしない。
+     * もっとも、オプションとして空文字が来ることはほぼ無いのでデフォルト値を空文字にすることで対応可能。
+     *
+     * $rule に従って `--noval filename --opt optval` のような文字列・配列をパースする。
+     * $rule 配列の仕様は下記。
+     *
+     * - キーは「オプション名」を指定する。ただし・・・
+     *     - 数値キーは「引数」を意味する
+     *     - スペースの後に「ショート名」を与えられる
+     * - 値は「デフォルト値」を指定する。ただし・・・
+     *     - `[]` は「複数値オプション」を意味する（配列にしない限り同オプションの多重指定は許されない）
+     *     - `null` は「値なしオプション」を意味する（スイッチングオプション）
+     * - 空文字キーは解釈自体のオプションを与える
+     *     - 今のところ throw のみの実装。配列ではなく bool を与えられる
+     *
+     * 上記の仕様でパースして「引数は数値連番、オプションはオプション名をキーとした配列」を返す。
+     * なお、いわゆる「引数」はどこに来ても良い（前オプション、後オプションの区別がない）。
+     *
+     * $argv には配列や文字列が与えられるが、ほとんどテスト用に近く、普通は未指定で $argv を使うはず。
+     *
+     * Example:
+     * ```php
+     * // いくつか織り交ぜたスタンダードな例
+     * $rule = [
+     *     'opt'       => 'def',    // 基本的には「デフォルト値」を表す
+     *     'longopt l' => '',       // スペース区切りで「ショート名」を意味する
+     *     1           => 'defarg', // 数値キーは「引数」を意味する
+     * ];
+     * that(arguments($rule, '--opt optval arg1 -l longval'))->isSame([
+     *     'opt'     => 'optval',  // optval と指定している
+     *     'longopt' => 'longval', // ショート名指定でも本来の名前で返ってくる
+     *     'arg1',   // いわゆるコマンドライン引数（optval は opt に飲まれるので含まれない）
+     *     'defarg', // いわゆるコマンドライン引数（与えられていないが、ルールの 1 => 'defarg' が活きている）
+     * ]);
+     *
+     * // 「値なしオプション」と「複数値オプション」の例
+     * $rule = [
+     *     'noval1 l'  => null, // null は「値なしオプション」を意味する（指定されていれば true されていなければ false を返す）
+     *     'noval2 m'  => null, // 同上
+     *     'noval3 n'  => null, // 同上
+     *     'opts o' => [],      // 配列を与えると「複数値オプション」を表す
+     * ];
+     * that(arguments($rule, '--opts o1 -ln arg1 -o o2 arg2 --opts o3'))->isSame([
+     *     'noval1' => true,  // -ln で同時指定されているので true
+     *     'noval2' => false, // -ln で同時指定されてないので false
+     *     'noval3' => true,  // -ln の同時指定されているので true
+     *     'opts'   => ['o1', 'o2', 'o3'], // ロング、ショート混在でも OK
+     *     'arg1', // 一見 -ln のオプション値に見えるが、 noval は値なしなので引数として得られる
+     *     'arg2', // 前オプション、後オプションの区別はないのでどこに居ようと引数として得られる
+     * ]);
+     *
+     * // 空文字で解釈自体のオプションを与える
+     * $rule = [
+     *     ''  => false, // 定義されていないオプションが来ても例外を投げずに引数として処理する
+     * ];
+     * that(arguments($rule, '--long A -short B'))->isSame([
+     *     '--long', // 明らかにオプション指定に見えるが、 long というオプションは定義されていないので引数として解釈される
+     *     'A',      // 同上。long のオプション値に見えるが、ただの引数
+     *     '-short', // 同上。short というオプションは定義されていない
+     *     'B',      // 同上。short のオプション値に見えるが、ただの引数
+     * ]);
+     * ```
+     *
+     * @package ryunosuke\Functions\Package\info
+     *
+     * @param array $rule オプションルール
+     * @param array|string|null $argv パースするコマンドライン引数。未指定時は $argv が使用される
+     * @return array コマンドライン引数＋オプション
+     */
+    function arguments($rule, $argv = null)
+    {
+        $opt = array_unset($rule, '', []);
+        if (is_bool($opt)) {
+            $opt = ['thrown' => $opt];
+        }
+        $opt += [
+            'thrown' => true,
+        ];
+
+        if ($argv === null) {
+            $argv = array_slice($_SERVER['argv'], 1); // @codeCoverageIgnore
+        }
+        if (is_string($argv)) {
+            $argv = quoteexplode([" ", "\t"], $argv);
+            $argv = array_filter($argv, 'strlen');
+        }
+        $argv = array_values($argv);
+
+        $shortmap = [];
+        $argsdefaults = [];
+        $optsdefaults = [];
+        foreach ($rule as $name => $default) {
+            if (is_int($name)) {
+                $argsdefaults[$name] = $default;
+                continue;
+            }
+            [$longname, $shortname] = preg_split('#\s+#u', $name, -1, PREG_SPLIT_NO_EMPTY) + [1 => ''];
+            if (strlen($shortname)) {
+                if (array_key_exists($shortname, $shortmap)) {
+                    throw new \InvalidArgumentException("duplicated short option name '$shortname'");
+                }
+                $shortmap[$shortname] = $longname;
+            }
+            if (array_key_exists($longname, $optsdefaults)) {
+                throw new \InvalidArgumentException("duplicated option name '$shortname'");
+            }
+            $optsdefaults[$longname] = $default;
+        }
+
+        $n = 0;
+        $already = [];
+        $result = array_map(fn($v) => $v === null ? false : $v, $optsdefaults);
+        while (($token = array_shift($argv)) !== null) {
+            if (strlen($token) >= 2 && $token[0] === '-') {
+                if ($token[1] === '-') {
+                    $optname = substr($token, 2);
+                    if (!$opt['thrown'] && !array_key_exists($optname, $optsdefaults)) {
+                        $result[$n++] = $token;
+                        continue;
+                    }
+                }
+                else {
+                    $shortname = substr($token, 1);
+                    if (!$opt['thrown'] && !array_keys_exist(str_split($shortname, 1), $shortmap)) {
+                        $result[$n++] = $token;
+                        continue;
+                    }
+                    if (strlen($shortname) > 1) {
+                        array_unshift($argv, '-' . substr($shortname, 1));
+                        $shortname = substr($shortname, 0, 1);
+                    }
+                    if (!isset($shortmap[$shortname])) {
+                        throw new \InvalidArgumentException("undefined short option name '$shortname'.");
+                    }
+                    $optname = $shortmap[$shortname];
+                }
+
+                if (!array_key_exists($optname, $optsdefaults)) {
+                    throw new \InvalidArgumentException("undefined option name '$optname'.");
+                }
+                if (isset($already[$optname]) && !is_array($result[$optname])) {
+                    throw new \InvalidArgumentException("'$optname' is specified already.");
+                }
+                $already[$optname] = true;
+
+                if ($optsdefaults[$optname] === null) {
+                    $result[$optname] = true;
+                }
+                else {
+                    if (!isset($argv[0]) || strpos($argv[0], '-') === 0) {
+                        throw new \InvalidArgumentException("'$optname' requires value.");
+                    }
+                    if (is_array($result[$optname])) {
+                        $result[$optname][] = array_shift($argv);
+                    }
+                    else {
+                        $result[$optname] = array_shift($argv);
+                    }
+                }
+            }
+            else {
+                $result[$n++] = $token;
+            }
+        }
+
+        array_walk_recursive($result, function (&$v) {
+            if (is_string($v)) {
+                $v = trim(str_replace('\\"', '"', $v), '"');
+            }
+        });
+        return $result + $argsdefaults;
     }
 }
 
@@ -1948,6 +2365,44 @@ if (!function_exists('ryunosuke\\ltsv\\is_resourcable')) {
             return true;
         }
         return false;
+    }
+}
+
+assert(!function_exists('ryunosuke\\ltsv\\is_stringable') || (new \ReflectionFunction('ryunosuke\\ltsv\\is_stringable'))->isUserDefined());
+if (!function_exists('ryunosuke\\ltsv\\is_stringable')) {
+    /**
+     * 変数が文字列化できるか調べる
+     *
+     * 「配列」「__toString を持たないオブジェクト」が false になる。
+     * （厳密に言えば配列は "Array" になるので文字列化できるといえるがここでは考えない）。
+     *
+     * Example:
+     * ```php
+     * // こいつらは true
+     * that(is_stringable(null))->isTrue();
+     * that(is_stringable(true))->isTrue();
+     * that(is_stringable(3.14))->isTrue();
+     * that(is_stringable(STDOUT))->isTrue();
+     * that(is_stringable(new \Exception()))->isTrue();
+     * // こいつらは false
+     * that(is_stringable(new \ArrayObject()))->isFalse();
+     * that(is_stringable([1, 2, 3]))->isFalse();
+     * ```
+     *
+     * @package ryunosuke\Functions\Package\var
+     *
+     * @param mixed $var 調べる値
+     * @return bool 文字列化できるなら true
+     */
+    function is_stringable($var)
+    {
+        if (is_array($var)) {
+            return false;
+        }
+        if (is_object($var) && !method_exists($var, '__toString')) {
+            return false;
+        }
+        return true;
     }
 }
 

@@ -21,7 +21,7 @@ use function ryunosuke\ltsv\var_export2;
 class LogrepCommand extends Command
 {
     public const NAME    = 'logrep';
-    public const VERSION = '2.1.1';
+    public const VERSION = '2.2.0';
 
     private static $STDIN = STDIN;
 
