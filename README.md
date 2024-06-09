@@ -33,8 +33,9 @@ Arguments:
                                  
 
 Options:
+  -c, --config=CONFIG            Specify config file. config file can set default values for all arguments and options by php.
   -i, --input=INPUT              Specify input format[auto|jsonl|ltsv|csv|ssv|tsv]. [default: "auto"]
-  -f, --output=OUTPUT            Specify output format[auto|yaml|json|jsonl|ltsv|csv|ssv|tsv|md|php]. [default: "auto"]
+  -f, --output=OUTPUT            Specify output format[auto|yaml|json|jsonl|ltsv|csv|ssv|tsv|sql|md|php]. [default: "auto"]
   -e, --regex=REGEX              Specify regex for not lstv file (only named subpattern).
                                  - e.g. combined log: --regex '/^(?<host>.*?) (.*?) (.*?) \[(?<time>.*?)\] "(?<request>.*?)" (?<status>.*?) (?<size>.*?) "(?<referer>.*?)" "(?<uagent>.*?)"$/'
                                  - e.g. preset file:  --regex ./combined.txt
@@ -60,23 +61,25 @@ Options:
                                  - e.g. order multi column:   --order-by '-colA, colB'
                                  - e.g. order php expression: --order-by '`$colA + $colB`'
                                  
-  -g, --group-by=GROUP-BY        Specify group column and aggregate column. Grouping will be executed after all finished. This option forces buffering mode.
-                                 - e.g. group colA: --group-by 'colA, countB:`count($colB)`, minC:`min($colC)`'
+  -g, --group-by=GROUP-BY        Specify group column. Can use all php functions and use virtual column. Grouping will be executed after all finished. This option forces buffering mode.
+                                 - e.g. group colA:           --group-by 'colA'
+                                 - e.g. group php expression: --group-by '`substr($colA, 0, 10)`'
+                                 - e.g. group virtual:        --select 'subcolA:`substr($colA, 0, 10)`' --group-by 'subcolA'
                                  
   -o, --offset=OFFSET            Specify skip count.
   -l, --limit=LIMIT              Specify take count.
   -r, --require=REQUIRE          Specify require file.php.
   -b, --below=BELOW              Specify count below the matched where (keeping original order).
   -W, --below-where=BELOW-WHERE  Specify below filter statement.
+      --table=TABLE              Specify tablename when SQL output.
       --compact                  Switch compact output.
   -C, --nocomment                Switch comment output.
   -H, --nocolor                  Switch color output.
   -E, --noerror                  Switch error output.
-  -h, --help                     Display this help message
+  -h, --help                     Display help for the given command. When no command is given display help for the logrep command
   -q, --quiet                    Do not output any message
   -V, --version                  Display this application version
-      --ansi                     Force ANSI output
-      --no-ansi                  Disable ANSI output
+      --ansi|--no-ansi           Force (or disable --no-ansi) ANSI output
   -n, --no-interaction           Do not ask any interactive question
   -v|vv|vvv, --verbose           Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
 
