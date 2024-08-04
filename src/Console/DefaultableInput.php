@@ -49,7 +49,7 @@ class DefaultableInput extends Input
         if (is_array($option)) {
             return !count($option);
         }
-        return !strlen($option);
+        return !strlen($option ?? '');
     }
 
     // <editor-fold desc="delegation">

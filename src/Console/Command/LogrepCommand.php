@@ -118,7 +118,7 @@ EOT
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $defaults = [];
-        if (strlen($configFile = $input->getOption('config'))) {
+        if (strlen(($configFile = $input->getOption('config')) ?? '')) {
             if (!file_exists($configFile)) {
                 throw new \InvalidArgumentException("'$configFile' is not exists.");
             }
@@ -331,7 +331,7 @@ EOT
 
         $itype = $this->input->getOption('input');
         $regex = $this->input->getOption('regex');
-        if (file_exists($regex)) {
+        if ($regex !== null && file_exists($regex)) {
             $regex = trim(file_get_contents($regex));
         }
         $seq = 0;
